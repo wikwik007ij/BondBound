@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BondBound: Infinite Chemistry Evolution</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #080c14;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+        }
+
+        /* Custom Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 3px;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .glow-blue {
+            box-shadow: 0 0 18px rgba(59, 130, 246, 0.45);
+        }
+        .glow-purple {
+            box-shadow: 0 0 18px rgba(168, 85, 247, 0.45);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.45);
+        }
+
+        .touch-btn {
+            background: rgba(30, 41, 59, 0.75);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            touch-action: manipulation;
+        }
+
+        .touch-btn:active {
+            transform: scale(0.92);
+            background: rgba(59, 130, 246, 0.7);
+        }
+
+        @keyframes pulse-alert {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        .alert-anim {
+            animation: pulse-alert 0.6s infinite;
+        }
+    </style>
+</head>
+<body class="text-white select-none">
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Overlay Layer -->
+    <div id="uiOverlay" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-3 md:p-6">
+        
+        <!-- Top HUD Bar -->
+        <div class="flex flex-wrap justify-between items-start gap-3 pointer-events-auto">
+            <!-- Player Status Card -->
+            <div class="glass-panel p-3 rounded-2xl flex items-center gap-3 min-w-[250px] border-l-4 border-blue-500 shadow-xl">
+                <div id="elementBadge" class="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-900 border border-blue-300/40 flex flex-col items-center justify-center font-bold shadow-lg">
+                    <span id="badgeAtomicNum" class="text-[10px] text-blue-200 self-start ml-2 -mb-1">1</span>
+                    <span id="badgeSymbol" class="text-2xl md:text-3xl text-white tracking-wider">H</span>
+                </div>
+                <div class="flex-1">
+                    <div class="flex justify-between items-center">
+                        <h2 id="elementName" class="font-extrabold text-base md:text-lg text-white">Hydrogen</h2>
+                        <span id="elementClass" class="text-[9px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-semibold uppercase">Non-metal</span>
+                    </div>
+                    <!-- Health & Energy Bars -->
+                    <div class="mt-2 space-y-1">
+                        <div class="w-full bg-slate-800/80 rounded-full h-2.5 border border-slate-700/50 overflow-hidden">
+                            <div id="healthBar" class="bg-gradient-to-r from-emerald-500 to-green-400 h-full rounded-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+                        <div class="w-full bg-slate-800/80 rounded-full h-1.5 border border-slate-700/50 overflow-hidden">
+                            <div id="energyBar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full transition-all duration-150" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats & Menu Buttons HUD -->
+            <div class="glass-panel p-2.5 md:p-3 rounded-2xl flex items-center gap-3 md:gap-5 text-xs md:text-sm shadow-xl">
+                <div class="text-center">
+                    <div class="text-slate-400 text-[9px] uppercase font-bold tracking-wider">Electrons</div>
+                    <div id="hudElectrons" class="text-base md:text-lg font-black text-cyan-400">1 / 2</div>
+                </div>
+                <div class="h-7 w-px bg-slate-700"></div>
+                <div class="text-center">
+                    <div class="text-slate-400 text-[9px] uppercase font-bold tracking-wider">Upgrade Pts</div>
+                    <div id="hudPoints" class="text-base md:text-lg font-black text-amber-400">0</div>
+                </div>
+                <div class="h-7 w-px bg-slate-700"></div>
+                <div class="text-center">
+                    <div class="text-slate-400 text-[9px] uppercase font-bold tracking-wider">Score</div>
+                    <div id="hudScore" class="text-base md:text-lg font-black text-purple-400">0</div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex gap-1.5 ml-1">
+                    <button id="btnOpenUpgrades" onclick="toggleUpgrades(true)" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 flex items-center justify-center text-amber-300 hover:text-amber-100 transition relative">
+                        <i class="fa-solid fa-angles-up text-sm"></i>
+                        <span id="upgradePointBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-slate-950 font-black text-[9px] rounded-full hidden items-center justify-center">0</span>
+                    </button>
+                    <button id="btnCodex" onclick="toggleCodex(true)" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-600 flex items-center justify-center text-blue-400 hover:text-white transition">
+                        <i class="fa-solid fa-book-open text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radical Aggro Warning Overlay -->
+        <div id="dangerBanner" class="self-center hidden pointer-events-none glass-panel border border-red-500/50 bg-red-950/50 text-red-300 px-5 py-1.5 rounded-full alert-anim flex items-center gap-2.5">
+            <i class="fa-solid fa-triangle-exclamation text-red-500 text-lg"></i>
+            <span class="font-bold text-xs md:text-sm tracking-wide">AGGRESSIVE ION AGGRO DETECTED!</span>
+        </div>
+
+        <!-- Bottom Controls & Action Buttons -->
+        <div class="flex justify-between items-end w-full">
+            <!-- Desktop Shortcuts Legend -->
+            <div class="hidden md:flex flex-col gap-1 text-[10px] text-slate-400 glass-panel p-2.5 rounded-xl">
+                <div><span class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-white font-mono">WASD</span> Move</div>
+                <div><span class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-white font-mono">SPACE</span> Steal Enemy Electron (5s CD)</div>
+                <div><span class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-white font-mono">1</span> Covalent Shield</div>
+                <div><span class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-white font-mono">2</span> Metallic Repel</div>
+                <div><span class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-white font-mono">U</span> Upgrades Menu</div>
+            </div>
+
+            <!-- Action Hotbar -->
+            <div class="flex items-center gap-2.5 pointer-events-auto ml-auto md:ml-0">
+                <!-- Ability 1: Shield -->
+                <button id="btnAbilityShield" class="touch-btn w-13 h-13 md:w-16 md:h-16 flex flex-col items-center justify-center relative">
+                    <i class="fa-solid fa-shield-halved text-base md:text-lg text-cyan-300"></i>
+                    <span class="text-[8px] md:text-[9px] font-bold mt-0.5">Shield [1]</span>
+                    <div id="cooldownShield" class="absolute inset-0 bg-slate-950/85 rounded-full flex items-center justify-center font-bold text-xs text-slate-300 hidden">0s</div>
+                </button>
+
+                <!-- Ability 2: Repel Shockwave -->
+                <button id="btnAbilityRepel" class="touch-btn w-13 h-13 md:w-16 md:h-16 flex flex-col items-center justify-center relative">
+                    <i class="fa-solid fa-dharmachakra text-base md:text-lg text-amber-300"></i>
+                    <span class="text-[8px] md:text-[9px] font-bold mt-0.5">Repel [2]</span>
+                    <div id="cooldownRepel" class="absolute inset-0 bg-slate-950/85 rounded-full flex items-center justify-center font-bold text-xs text-slate-300 hidden">0s</div>
+                </button>
+
+                <!-- Primary Steal Button (Enforces Enemy Proximity & 5s CD) -->
+                <button id="btnSteal" class="touch-btn w-16 h-16 md:w-20 md:h-20 bg-gradient-to-tr from-blue-600 to-indigo-500 border-2 border-blue-300/50 flex flex-col items-center justify-center text-white font-extrabold shadow-lg relative">
+                    <i class="fa-solid fa-bolt text-lg md:text-2xl text-amber-300"></i>
+                    <span class="text-[9px] tracking-wider mt-0.5">STEAL [Space]</span>
+                    <div id="cooldownSteal" class="absolute inset-0 bg-slate-950/85 rounded-full flex flex-col items-center justify-center font-bold text-xs text-amber-400 hidden">
+                        <span id="stealCdText">5.0s</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Virtual Touch Joystick -->
+    <div id="joystickZone" class="absolute bottom-6 left-6 w-32 h-32 md:w-36 md:h-36 rounded-full border-2 border-white/10 glass-panel md:hidden pointer-events-auto flex items-center justify-center">
+        <div id="joystickKnob" class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-500/50 border border-blue-300/80 shadow-md transform translate-x-0 translate-y-0 transition-transform duration-75"></div>
+    </div>
+
+    <!-- Start / Restart Modal -->
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+        <div class="glass-panel p-6 md:p-8 rounded-3xl max-w-md w-full border border-blue-500/30 text-center shadow-2xl relative overflow-hidden">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-4xl text-white shadow-xl glow-blue">
+                <i class="fa-solid fa-atom animate-spin" style="animation-duration: 12s;"></i>
+            </div>
+            <h1 id="modalTitle" class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 tracking-tight">BondBound</h1>
+            <p id="modalSubtitle" class="text-xs text-blue-300 font-semibold tracking-widest uppercase mb-4">Infinite Chemistry Evolution</p>
+            
+            <p id="modalDesc" class="text-xs md:text-sm text-slate-300 leading-relaxed mb-6">
+                Absorb free electrons, fight CPUs to steal valence electrons, and spend Upgrade Points on speed, magnet radius, and shield resilience! Fend off chasing <b>OH⁻ / OH⁺ Hydroxide ions</b>.
+            </p>
+
+            <button id="btnStartGame" onclick="startGame()" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-extrabold text-base tracking-wide shadow-lg hover:shadow-blue-500/25 transition duration-200">
+                BEGIN EVOLUTION
+            </button>
+        </div>
+    </div>
+
+    <!-- Upgrade UI Modal Overlay -->
+    <div id="upgradeModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="glass-panel w-full max-w-xl rounded-3xl border border-amber-500/30 flex flex-col overflow-hidden shadow-2xl">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
+                        <i class="fa-solid fa-up-long text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-lg text-white">Atomic Attribute Upgrades</h3>
+                        <p class="text-xs text-amber-300">Available Points: <span id="upgradeModalPoints" class="font-bold text-white">0</span></p>
+                    </div>
+                </div>
+                <button onclick="toggleUpgrades(false)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Upgrade Options List -->
+            <div class="p-5 overflow-y-auto space-y-4 max-h-[70vh]">
+                
+                <!-- Upgrade Item 1: Magnet Radius -->
+                <div class="bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                            <i class="fa-solid fa-magnet text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-white">Magnetic Collection Radius</div>
+                            <div class="text-[11px] text-slate-400">Level <span id="lvlMagnet" class="text-cyan-400 font-bold">1</span> / 10 • Range: <span id="valMagnet" class="text-slate-200">120px</span></div>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade('magnet')" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md disabled:opacity-40">
+                        UPGRADE (1 PT)
+                    </button>
+                </div>
+
+                <!-- Upgrade Item 2: Movement Speed -->
+                <div class="bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                            <i class="fa-solid fa-gauge-high text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-white">Atomic Velocity (Speed)</div>
+                            <div class="text-[11px] text-slate-400">Level <span id="lvlSpeed" class="text-blue-400 font-bold">1</span> / 10 • Speed: <span id="valSpeed" class="text-slate-200">4.5</span></div>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade('speed')" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md">
+                        UPGRADE (1 PT)
+                    </button>
+                </div>
+
+                <!-- Upgrade Item 3: Steal Range & CD -->
+                <div class="bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                            <i class="fa-solid fa-bolt text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-white">Steal Mastery</div>
+                            <div class="text-[11px] text-slate-400">Level <span id="lvlSteal" class="text-purple-400 font-bold">1</span> / 5 • Range: <span id="valSteal" class="text-slate-200">140px</span></div>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade('steal')" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md">
+                        UPGRADE (1 PT)
+                    </button>
+                </div>
+
+                <!-- Upgrade Item 4: Shield Resilience -->
+                <div class="bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                            <i class="fa-solid fa-shield text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-white">Shield Resilience</div>
+                            <div class="text-[11px] text-slate-400">Level <span id="lvlShield" class="text-emerald-400 font-bold">1</span> / 5 • Duration: <span id="valShield" class="text-slate-200">4.0s</span></div>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade('shield')" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md">
+                        UPGRADE (1 PT)
+                    </button>
+                </div>
+
+                <!-- Upgrade Item 5: Max Nucleus Health -->
+                <div class="bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                            <i class="fa-solid fa-heart text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-white">Nucleus Stability (Max HP)</div>
+                            <div class="text-[11px] text-slate-400">Level <span id="lvlHealth" class="text-rose-400 font-bold">1</span> / 10 • Max HP: <span id="valHealth" class="text-slate-200">100</span></div>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade('health')" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md">
+                        UPGRADE (1 PT)
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Chemistry Codex Modal -->
+    <div id="codexModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
+        <div class="glass-panel w-full max-w-3xl max-h-[85vh] rounded-3xl border border-blue-500/30 flex flex-col overflow-hidden shadow-2xl">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-book-journal-whills text-blue-400 text-xl"></i>
+                    <h3 class="font-bold text-lg text-white">Periodic Evolution & Chemical Codex</h3>
+                </div>
+                <button onclick="toggleCodex(false)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-3">Evolution Path (Atomic Progression)</h4>
+                    <div id="codexGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+                </div>
+
+                <div class="bg-red-950/20 border border-red-500/30 rounded-2xl p-4">
+                    <h4 class="font-bold text-red-400 text-base mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-biohazard"></i> Stealing Electrons & Hydroxide Aggro
+                    </h4>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        - <b>Steal Mechanics:</b> You can steal valence electrons from nearby CPU element bots or ions when in range (5s cooldown). If no enemies are in range, stealing will not trigger.<br>
+                        - <b>Aggressive OH⁻ / OH⁺ Ions:</b> Hydroxide ions patrol the map. Entering their detection circle triggers an active chase for 5 seconds before they leash and return to patrol.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Synthesized Web Audio API Sound Effects Engine
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playPickup() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(480, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(960, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            }
+            playStealSuccess() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99].forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.05);
+                    gain.gain.setValueAtTime(0.2, now + i * 0.05);
+                    gain.gain.linearRampToValueAtTime(0.01, now + i * 0.05 + 0.18);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.05);
+                    osc.stop(now + i * 0.05 + 0.18);
+                });
+            }
+            playStealFail() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(110, this.ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+            playEvolve() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [261.63, 329.63, 392.00, 523.25].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.3);
+                });
+            }
+            playShield() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(320, this.ctx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.25);
+            }
+            playRepel() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(70, this.ctx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.22, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.25);
+            }
+            playAlert() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(650, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(850, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.16);
+            }
+        }
+        const sound = new SoundFX();
+
+        // Comprehensive Chemical Elements Dataset
+        const ELEMENTS = [
+            { z: 1,  symbol: 'H',  name: 'Hydrogen',   class: 'nonmetal',      maxValence: 2,  en: 2.20, color: '#3b82f6', radius: 20 },
+            { z: 2,  symbol: 'He', name: 'Helium',     class: 'noble',         maxValence: 2,  en: 0.00, color: '#a855f7', radius: 22 },
+            { z: 3,  symbol: 'Li', name: 'Lithium',    class: 'alkali',        maxValence: 8,  en: 0.98, color: '#ef4444', radius: 24 },
+            { z: 6,  symbol: 'C',  name: 'Carbon',     class: 'nonmetal',      maxValence: 8,  en: 2.55, color: '#10b981', radius: 26 },
+            { z: 7,  symbol: 'N',  name: 'Nitrogen',   class: 'nonmetal',      maxValence: 8,  en: 3.04, color: '#06b6d4', radius: 27 },
+            { z: 8,  symbol: 'O',  name: 'Oxygen',     class: 'nonmetal',      maxValence: 8,  en: 3.44, color: '#f43f5e', radius: 28 },
+            { z: 10, symbol: 'Ne', name: 'Neon',       class: 'noble',         maxValence: 8,  en: 0.00, color: '#e879f9', radius: 30 },
+            { z: 11, symbol: 'Na', name: 'Sodium',     class: 'alkali',        maxValence: 8,  en: 0.93, color: '#f59e0b', radius: 32 },
+            { z: 17, symbol: 'Cl', name: 'Chlorine',   class: 'halogen',       maxValence: 8,  en: 3.16, color: '#84cc16', radius: 34 },
+            { z: 18, symbol: 'Ar', name: 'Argon',      class: 'noble',         maxValence: 8,  en: 0.00, color: '#c084fc', radius: 36 },
+            /* Beyond Argon Extended Evolution Trees */
+            { z: 19, symbol: 'K',  name: 'Potassium',  class: 'alkali',        maxValence: 8,  en: 0.82, color: '#fb923c', radius: 38 },
+            { z: 20, symbol: 'Ca', name: 'Calcium',    class: 'alkaline-earth',maxValence: 8,  en: 1.00, color: '#facc15', radius: 40 },
+            { z: 26, symbol: 'Fe', name: 'Iron',       class: 'transition',    maxValence: 14, en: 1.83, color: '#e2e8f0', radius: 44 },
+            { z: 29, symbol: 'Cu', name: 'Copper',     class: 'transition',    maxValence: 12, en: 1.90, color: '#f97316', radius: 45 },
+            { z: 36, symbol: 'Kr', name: 'Krypton',    class: 'noble',         maxValence: 8,  en: 0.00, color: '#e879f9', radius: 48 },
+            { z: 54, symbol: 'Xe', name: 'Xenon',      class: 'noble',         maxValence: 8,  en: 0.00, color: '#d8b4fe', radius: 50 },
+            { z: 79, symbol: 'Au', name: 'Gold',       class: 'transition',    maxValence: 18, en: 2.54, color: '#fbbf24', radius: 54 },
+            { z: 118,symbol: 'Og', name: 'Oganesson',  class: 'noble',         maxValence: 8,  en: 0.00, color: '#f43f5e', radius: 58 }
+        ];
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        const WORLD_SIZE = 3600;
+
+        // Input & Joystick Controls
+        const keys = {};
+        const joystick = { startX: 0, startY: 0, active: false, dx: 0, dy: 0 };
+
+        // Game State Variables
+        let player;
+        let cpus = [];
+        let electrons = [];
+        let radicals = [];
+        let antioxidants = [];
+        let particles = [];
+        let floatingTexts = [];
+        let gameActive = false;
+        let score = 0;
+        let upgradePoints = 0;
+
+        // Upgrades Levels
+        const upgrades = {
+            magnet: { level: 1, max: 10, val: 120 },
+            speed: { level: 1, max: 10, val: 4.5 },
+            steal: { level: 1, max: 5, val: 140 },
+            shield: { level: 1, max: 5, val: 4.0 },
+            health: { level: 1, max: 10, val: 100 }
+        };
+
+        // Floating Text FX Class
+        class FloatingText {
+            constructor(x, y, text, color = '#ffffff') {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.color = color;
+                this.alpha = 1.0;
+                this.vy = -1.2;
+            }
+            update() {
+                this.y += this.vy;
+                this.alpha -= 0.02;
+            }
+            draw(camX, camY) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                ctx.fillStyle = this.color;
+                ctx.font = 'bold 13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.text, this.x - camX, this.y - camY);
+                ctx.restore();
+            }
+        }
+
+        class Player {
+            constructor() {
+                this.x = WORLD_SIZE / 2;
+                this.y = WORLD_SIZE / 2;
+                this.vx = 0;
+                this.vy = 0;
+                this.elementIndex = 0;
+                this.valenceElectrons = 1;
+                this.health = upgrades.health.val;
+                this.maxHealth = upgrades.health.val;
+                this.energy = 100;
+
+                // Ability Timers & Cooldowns
+                this.stealCooldown = 0; // Strict 300 frames (5 seconds)
+                this.shieldActive = false;
+                this.shieldTimer = 0;
+                this.shieldCooldown = 0;
+                this.repelCooldown = 0;
+
+                this.rotation = 0;
+                this.shockwaveRadius = 0;
+            }
+
+            get element() {
+                return ELEMENTS[this.elementIndex];
+            }
+
+            update() {
+                // Movement Handling
+                let moveX = 0;
+                let moveY = 0;
+
+                if (keys['w'] || keys['W'] || keys['ArrowUp']) moveY -= 1;
+                if (keys['s'] || keys['S'] || keys['ArrowDown']) moveY += 1;
+                if (keys['a'] || keys['A'] || keys['ArrowLeft']) moveX -= 1;
+                if (keys['d'] || keys['D'] || keys['ArrowRight']) moveX += 1;
+
+                if (joystick.active) {
+                    moveX = joystick.dx;
+                    moveY = joystick.dy;
+                }
+
+                const len = Math.hypot(moveX, moveY);
+                const curSpeed = upgrades.speed.val;
+                if (len > 0) {
+                    this.vx = (moveX / (len > 1 ? len : 1)) * curSpeed;
+                    this.vy = (moveY / (len > 1 ? len : 1)) * curSpeed;
+                } else {
+                    this.vx *= 0.82;
+                    this.vy *= 0.82;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Clamp Boundaries
+                this.x = Math.max(100, Math.min(WORLD_SIZE - 100, this.x));
+                this.y = Math.max(100, Math.min(WORLD_SIZE - 100, this.y));
+
+                this.rotation += 0.025;
+
+                // Energy Regen
+                if (this.energy < 100) this.energy = Math.min(100, this.energy + 0.3);
+
+                // Cooldown Decrements
+                if (this.stealCooldown > 0) this.stealCooldown--;
+                if (this.shieldTimer > 0) {
+                    this.shieldTimer--;
+                    if (this.shieldTimer === 0) this.shieldActive = false;
+                }
+                if (this.shieldCooldown > 0) this.shieldCooldown--;
+                if (this.repelCooldown > 0) this.repelCooldown--;
+
+                if (this.shockwaveRadius > 0) {
+                    this.shockwaveRadius += 12;
+                    if (this.shockwaveRadius > 220) this.shockwaveRadius = 0;
+                }
+            }
+
+            // Steal Mechanics (MUST BE IN RANGE OF CPU/ENEMY AND COOLDOWN READY)
+            performSteal() {
+                sound.init();
+
+                if (this.stealCooldown > 0) {
+                    const secs = (this.stealCooldown / 60).toFixed(1);
+                    floatingTexts.push(new FloatingText(this.x, this.y - 30, `Steal Cooldown (${secs}s)!`, '#f59e0b'));
+                    sound.playStealFail();
+                    return;
+                }
+
+                // Check for CPUs or Hydroxides in Range
+                const stealRange = upgrades.steal.val;
+                let targetEnemy = null;
+                let minDist = stealRange;
+
+                // Search CPU Bots
+                cpus.forEach(cpu => {
+                    const dist = Math.hypot(cpu.x - this.x, cpu.y - this.y);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        targetEnemy = cpu;
+                    }
+                });
+
+                // If no CPU, search Hydroxides/Radicals
+                if (!targetEnemy) {
+                    radicals.forEach(r => {
+                        const dist = Math.hypot(r.x - this.x, r.y - this.y);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            targetEnemy = r;
+                        }
+                    });
+                }
+
+                // Execute Steal if target exists in range
+                if (targetEnemy) {
+                    this.stealCooldown = 300; // 5 Seconds (60 FPS * 5)
+                    sound.playStealSuccess();
+
+                    // Steal valence electron
+                    this.addElectron();
+                    score += 100;
+                    upgradePoints += 1; // Gain upgrade point from combat steal
+
+                    if (targetEnemy.valenceElectrons) targetEnemy.valenceElectrons = Math.max(1, targetEnemy.valenceElectrons - 1);
+
+                    floatingTexts.push(new FloatingText(this.x, this.y - 35, `STOLE ELECTRON! (+1 Pt)`, '#38bdf8'));
+                    floatingTexts.push(new FloatingText(targetEnemy.x, targetEnemy.y - 20, `-1 Electron`, '#ef4444'));
+
+                    // Particles Visual Effect
+                    for (let i = 0; i < 15; i++) {
+                        particles.push(new Particle(targetEnemy.x, targetEnemy.y, '#38bdf8'));
+                    }
+                } else {
+                    // Fail: No enemy in range
+                    sound.playStealFail();
+                    floatingTexts.push(new FloatingText(this.x, this.y - 30, `No Target in Range (${stealRange}px)!`, '#ef4444'));
+                }
+                updateHUD();
+            }
+
+            addElectron() {
+                this.valenceElectrons++;
+                score += 50;
+                sound.playPickup();
+
+                const currentElem = this.element;
+                if (this.valenceElectrons >= currentElem.maxValence) {
+                    this.evolveNext();
+                }
+                updateHUD();
+            }
+
+            evolveNext() {
+                if (this.elementIndex < ELEMENTS.length - 1) {
+                    this.elementIndex++;
+                    this.valenceElectrons = 1;
+                    upgradePoints += 2; // Evolution bonus points
+                    this.health = Math.min(this.maxHealth, this.health + 40);
+                    sound.playEvolve();
+
+                    floatingTexts.push(new FloatingText(this.x, this.y - 45, `EVOLVED TO ${this.element.name}! (+2 Upgrade Pts)`, '#a855f7'));
+
+                    for (let i = 0; i < 40; i++) {
+                        particles.push(new Particle(this.x, this.y, this.element.color));
+                    }
+                }
+                updateHUD();
+            }
+
+            activateShield() {
+                if (this.shieldCooldown > 0 || this.energy < 25) return;
+                this.energy -= 25;
+                this.shieldActive = true;
+                this.shieldTimer = Math.round(upgrades.shield.val * 60);
+                this.shieldCooldown = 420; // 7s cooldown
+                sound.playShield();
+                floatingTexts.push(new FloatingText(this.x, this.y - 30, `Shield Activated!`, '#22d3ee'));
+                updateHUD();
+            }
+
+            activateRepel() {
+                if (this.repelCooldown > 0 || this.energy < 35) return;
+                this.energy -= 35;
+                this.repelCooldown = 360;
+                this.shockwaveRadius = 10;
+                sound.playRepel();
+
+                // Blast away chasing radicals
+                radicals.forEach(r => {
+                    const dist = Math.hypot(r.x - this.x, r.y - this.y);
+                    if (dist < 240) {
+                        const angle = Math.atan2(r.y - this.y, r.x - this.x);
+                        r.vx = Math.cos(angle) * 15;
+                        r.vy = Math.sin(angle) * 15;
+                        r.isChasing = false;
+                        r.chaseTimer = 0;
+                    }
+                });
+                updateHUD();
+            }
+
+            draw(camX, camY) {
+                const px = this.x - camX;
+                const py = this.y - camY;
+
+                ctx.save();
+                ctx.translate(px, py);
+
+                // Magnetic Collection Radius Indicator
+                ctx.beginPath();
+                ctx.arc(0, 0, upgrades.magnet.val, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+                ctx.setLineDash([6, 6]);
+                ctx.stroke();
+
+                // Shield Bubble
+                if (this.shieldActive) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.element.radius + 22, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(6, 182, 212, 0.2)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#22d3ee';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([8, 4]);
+                    ctx.stroke();
+                }
+
+                // Metallic Shockwave
+                if (this.shockwaveRadius > 0) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.shockwaveRadius, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(251, 191, 36, ${1 - this.shockwaveRadius / 220})`;
+                    ctx.lineWidth = 6;
+                    ctx.stroke();
+                }
+
+                // Electron Orbit Shells
+                const rings = Math.ceil(this.element.z / 8);
+                for (let r = 1; r <= rings; r++) {
+                    const orbitR = this.element.radius + r * 12;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, orbitR, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                // Orbiting Valence Electrons
+                const outerRadius = this.element.radius + rings * 12;
+                for (let e = 0; e < this.valenceElectrons; e++) {
+                    const angle = this.rotation + (e * (Math.PI * 2 / this.valenceElectrons));
+                    const ex = Math.cos(angle) * outerRadius;
+                    const ey = Math.sin(angle) * outerRadius;
+
+                    ctx.beginPath();
+                    ctx.arc(ex, ey, 4.5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.fill();
+                    ctx.shadowColor = '#0284c7';
+                    ctx.shadowBlur = 8;
+                }
+
+                // Nucleus Core
+                ctx.beginPath();
+                ctx.arc(0, 0, this.element.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.element.color;
+                ctx.shadowColor = this.element.color;
+                ctx.shadowBlur = 18;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Core Symbol
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = `bold ${Math.max(12, this.element.radius * 0.65)}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.element.symbol, 0, 0);
+
+                ctx.restore();
+            }
+        }
+
+        class CPUBot {
+            constructor() {
+                this.x = Math.random() * (WORLD_SIZE - 200) + 100;
+                this.y = Math.random() * (WORLD_SIZE - 200) + 100;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.elementIndex = Math.floor(Math.random() * 8);
+                this.valenceElectrons = Math.floor(Math.random() * 4) + 1;
+            }
+            get element() {
+                return ELEMENTS[this.elementIndex];
+            }
+            update() {
+                if (Math.random() < 0.02) {
+                    this.vx = (Math.random() - 0.5) * 2.5;
+                    this.vy = (Math.random() - 0.5) * 2.5;
+                }
+                this.x += this.vx;
+                this.y += this.vy;
+                this.x = Math.max(100, Math.min(WORLD_SIZE - 100, this.x));
+                this.y = Math.max(100, Math.min(WORLD_SIZE - 100, this.y));
+            }
+            draw(camX, camY) {
+                const px = this.x - camX;
+                const py = this.y - camY;
+
+                ctx.save();
+                ctx.translate(px, py);
+
+                ctx.beginPath();
+                ctx.arc(0, 0, this.element.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.element.color;
+                ctx.fill();
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.element.symbol, 0, 0);
+
+                ctx.restore();
+            }
+        }
+
+        class Radical {
+            constructor() {
+                this.x = Math.random() * (WORLD_SIZE - 200) + 100;
+                this.y = Math.random() * (WORLD_SIZE - 200) + 100;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                
+                const types = ['OH⁻', 'OH⁺', 'ROS'];
+                this.type = types[Math.floor(Math.random() * types.length)];
+                this.radius = 18;
+
+                this.detectionRadius = 260;
+                this.maxLeashDistance = 450;
+                this.isChasing = false;
+                this.chaseTimer = 0;
+                this.spawnX = this.x;
+                this.spawnY = this.y;
+                this.alertSoundPlayed = false;
+            }
+
+            update(player) {
+                const distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
+
+                if (!this.isChasing) {
+                    if (distToPlayer < this.detectionRadius) {
+                        this.isChasing = true;
+                        this.chaseTimer = 300; // 5s aggro
+                        if (!this.alertSoundPlayed) {
+                            sound.playAlert();
+                            this.alertSoundPlayed = true;
+                        }
+                    }
+                } else {
+                    this.chaseTimer--;
+                    const angle = Math.atan2(player.y - this.y, player.x - this.x);
+                    this.vx = Math.cos(angle) * 3.8;
+                    this.vy = Math.sin(angle) * 3.8;
+
+                    if (distToPlayer > this.maxLeashDistance || this.chaseTimer <= 0) {
+                        this.isChasing = false;
+                        this.alertSoundPlayed = false;
+                    }
+                }
+
+                if (!this.isChasing) {
+                    const distToSpawn = Math.hypot(this.spawnX - this.x, this.spawnY - this.y);
+                    if (distToSpawn > 300) {
+                        const angle = Math.atan2(this.spawnY - this.y, this.spawnX - this.x);
+                        this.vx = Math.cos(angle) * 1.5;
+                        this.vy = Math.sin(angle) * 1.5;
+                    } else if (Math.random() < 0.02) {
+                        this.vx = (Math.random() - 0.5) * 2;
+                        this.vy = (Math.random() - 0.5) * 2;
+                    }
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Collision with player
+                if (distToPlayer < player.element.radius + this.radius) {
+                    if (player.shieldActive) {
+                        this.respawn();
+                        score += 30;
+                    } else {
+                        let damage = 18;
+                        if (player.element.class === 'noble') damage *= 0.6;
+
+                        player.health -= damage;
+                        floatingTexts.push(new FloatingText(player.x, player.y - 20, `-${damage.toFixed(0)} HP`, '#ef4444'));
+                        this.respawn();
+                        updateHUD();
+
+                        if (player.health <= 0) gameOver();
+                    }
+                }
+            }
+
+            respawn() {
+                this.x = Math.random() * (WORLD_SIZE - 200) + 100;
+                this.y = Math.random() * (WORLD_SIZE - 200) + 100;
+                this.spawnX = this.x;
+                this.spawnY = this.y;
+                this.isChasing = false;
+                this.chaseTimer = 0;
+                this.alertSoundPlayed = false;
+            }
+
+            draw(camX, camY) {
+                const px = this.x - camX;
+                const py = this.y - camY;
+
+                ctx.save();
+                ctx.translate(px, py);
+
+                ctx.beginPath();
+                ctx.arc(0, 0, this.detectionRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = this.isChasing ? 'rgba(239, 68, 68, 0.25)' : 'rgba(255, 255, 255, 0.04)';
+                ctx.setLineDash([4, 4]);
+                ctx.stroke();
+
+                if (this.isChasing) {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.font = 'bold 16px sans-serif';
+                    ctx.fillText('!', 0, -this.radius - 12);
+                }
+
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.isChasing ? '#dc2626' : '#991b1b';
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = this.isChasing ? 16 : 8;
+                ctx.fill();
+                ctx.strokeStyle = '#fca5a5';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.type, 0, 0);
+
+                ctx.restore();
+            }
+        }
+
+        class ElectronPickup {
+            constructor() {
+                this.x = Math.random() * (WORLD_SIZE - 100) + 50;
+                this.y = Math.random() * (WORLD_SIZE - 100) + 50;
+                this.radius = 6;
+                this.pulse = Math.random() * Math.PI;
+            }
+            update(player) {
+                this.pulse += 0.05;
+                const dist = Math.hypot(player.x - this.x, player.y - this.y);
+
+                // Magnetic Collection Radius Pull
+                const magnetRadius = upgrades.magnet.val;
+                if (dist < magnetRadius) {
+                    const angle = Math.atan2(player.y - this.y, player.x - this.x);
+                    this.x += Math.cos(angle) * 5;
+                    this.y += Math.sin(angle) * 5;
+                }
+
+                if (dist < player.element.radius + this.radius + 6) {
+                    player.addElectron();
+                    this.respawn();
+                }
+            }
+            respawn() {
+                this.x = Math.random() * (WORLD_SIZE - 100) + 50;
+                this.y = Math.random() * (WORLD_SIZE - 100) + 50;
+            }
+            draw(camX, camY) {
+                const r = this.radius + Math.sin(this.pulse) * 1.5;
+                ctx.beginPath();
+                ctx.arc(this.x - camX, this.y - camY, r, 0, Math.PI * 2);
+                ctx.fillStyle = '#38bdf8';
+                ctx.shadowColor = '#0284c7';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+            }
+        }
+
+        class Antioxidant {
+            constructor() {
+                this.x = Math.random() * (WORLD_SIZE - 100) + 50;
+                this.y = Math.random() * (WORLD_SIZE - 100) + 50;
+                this.radius = 12;
+            }
+            update(player) {
+                const dist = Math.hypot(player.x - this.x, player.y - this.y);
+                if (dist < player.element.radius + this.radius) {
+                    player.health = Math.min(player.maxHealth, player.health + 25);
+                    sound.playPickup();
+                    floatingTexts.push(new FloatingText(player.x, player.y - 20, `+25 HP`, '#10b981'));
+                    updateHUD();
+                    this.respawn();
+                }
+            }
+            respawn() {
+                this.x = Math.random() * (WORLD_SIZE - 100) + 50;
+                this.y = Math.random() * (WORLD_SIZE - 100) + 50;
+            }
+            draw(camX, camY) {
+                ctx.beginPath();
+                ctx.arc(this.x - camX, this.y - camY, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#10b981';
+                ctx.shadowColor = '#34d399';
+                ctx.shadowBlur = 12;
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('VitC', this.x - camX, this.y - camY);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.color = color;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.03 + 0.015;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+            draw(camX, camY) {
+                ctx.beginPath();
+                ctx.arc(this.x - camX, this.y - camY, Math.max(1, 4 * this.life), 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        // Keyboard Event Listeners
+        window.addEventListener('keydown', e => {
+            keys[e.key] = true;
+            sound.init();
+
+            if (e.code === 'Space') player.performSteal();
+            if (e.key === '1') player.activateShield();
+            if (e.key === '2') player.activateRepel();
+            if (e.key === 'u' || e.key === 'U') toggleUpgrades(document.getElementById('upgradeModal').style.display === 'none');
+        });
+        window.addEventListener('keyup', e => keys[e.key] = false);
+
+        const joystickZone = document.getElementById('joystickZone');
+        const joystickKnob = document.getElementById('joystickKnob');
+
+        joystickZone.addEventListener('touchstart', e => {
+            e.preventDefault();
+            sound.init();
+            const touchEvt = e.touches[0];
+            const rect = joystickZone.getBoundingClientRect();
+            joystick.startX = rect.left + rect.width / 2;
+            joystick.startY = rect.top + rect.height / 2;
+            joystick.active = true;
+            updateJoystick(touchEvt.clientX, touchEvt.clientY);
+        });
+
+        joystickZone.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (joystick.active) updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        });
+
+        const resetJoystick = () => {
+            joystick.active = false;
+            joystick.dx = 0;
+            joystick.dy = 0;
+            joystickKnob.style.transform = `translate(0px, 0px)`;
+        };
+
+        joystickZone.addEventListener('touchend', resetJoystick);
+        joystickZone.addEventListener('touchcancel', resetJoystick);
+
+        function updateJoystick(clientX, clientY) {
+            const maxRadius = 45;
+            let dx = clientX - joystick.startX;
+            let dy = clientY - joystick.startY;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > maxRadius) {
+                dx = (dx / dist) * maxRadius;
+                dy = (dy / dist) * maxRadius;
+            }
+
+            joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+            joystick.dx = dx / maxRadius;
+            joystick.dy = dy / maxRadius;
+        }
+
+        // Action Button Touch Event Handlers
+        document.getElementById('btnSteal').addEventListener('click', () => player.performSteal());
+        document.getElementById('btnAbilityShield').addEventListener('click', () => player.activateShield());
+        document.getElementById('btnAbilityRepel').addEventListener('click', () => player.activateRepel());
+
+        function updateHUD() {
+            if (!player) return;
+
+            const elem = player.element;
+            document.getElementById('badgeAtomicNum').innerText = elem.z;
+            document.getElementById('badgeSymbol').innerText = elem.symbol;
+            document.getElementById('badgeSymbol').style.color = elem.color;
+            document.getElementById('elementName').innerText = elem.name;
+            document.getElementById('elementClass').innerText = elem.class;
+
+            document.getElementById('hudElectrons').innerText = `${player.valenceElectrons} / ${elem.maxValence}`;
+            document.getElementById('hudPoints').innerText = upgradePoints;
+            document.getElementById('hudScore').innerText = score;
+
+            document.getElementById('healthBar').style.width = `${(player.health / player.maxHealth) * 100}%`;
+            document.getElementById('energyBar').style.width = `${player.energy}%`;
+
+            // Upgrade Notification Badge
+            const ptBadge = document.getElementById('upgradePointBadge');
+            if (upgradePoints > 0) {
+                ptBadge.innerText = upgradePoints;
+                ptBadge.style.display = 'flex';
+            } else {
+                ptBadge.style.display = 'none';
+            }
+
+            // Steal Cooldown Overlay
+            const stealCdEl = document.getElementById('cooldownSteal');
+            const stealCdTxt = document.getElementById('stealCdText');
+            if (player.stealCooldown > 0) {
+                stealCdEl.classList.remove('hidden');
+                stealCdTxt.innerText = `${(player.stealCooldown / 60).toFixed(1)}s`;
+            } else {
+                stealCdEl.classList.add('hidden');
+            }
+
+            // Abilities Cooldown Overlays
+            const shieldCdEl = document.getElementById('cooldownShield');
+            if (player.shieldCooldown > 0) {
+                shieldCdEl.classList.remove('hidden');
+                shieldCdEl.innerText = `${Math.ceil(player.shieldCooldown / 60)}s`;
+            } else shieldCdEl.classList.add('hidden');
+
+            const repelCdEl = document.getElementById('cooldownRepel');
+            if (player.repelCooldown > 0) {
+                repelCdEl.classList.remove('hidden');
+                repelCdEl.innerText = `${Math.ceil(player.repelCooldown / 60)}s`;
+            } else repelCdEl.classList.add('hidden');
+
+            // Danger Alert Banner Toggle
+            const anyChasing = radicals.some(r => r.isChasing);
+            const dangerBanner = document.getElementById('dangerBanner');
+            if (anyChasing) dangerBanner.classList.remove('hidden');
+            else dangerBanner.classList.add('hidden');
+
+            updateUpgradeModalUI();
+        }
+
+        function updateUpgradeModalUI() {
+            document.getElementById('upgradeModalPoints').innerText = upgradePoints;
+
+            document.getElementById('lvlMagnet').innerText = upgrades.magnet.level;
+            document.getElementById('valMagnet').innerText = `${upgrades.magnet.val}px`;
+
+            document.getElementById('lvlSpeed').innerText = upgrades.speed.level;
+            document.getElementById('valSpeed').innerText = upgrades.speed.val.toFixed(1);
+
+            document.getElementById('lvlSteal').innerText = upgrades.steal.level;
+            document.getElementById('valSteal').innerText = `${upgrades.steal.val}px`;
+
+            document.getElementById('lvlShield').innerText = upgrades.shield.level;
+            document.getElementById('valShield').innerText = `${upgrades.shield.val.toFixed(1)}s`;
+
+            document.getElementById('lvlHealth').innerText = upgrades.health.level;
+            document.getElementById('valHealth').innerText = upgrades.health.val;
+        }
+
+        function buyUpgrade(type) {
+            if (upgradePoints < 1) return;
+
+            const u = upgrades[type];
+            if (u.level >= u.max) return;
+
+            upgradePoints--;
+            u.level++;
+
+            if (type === 'magnet') u.val += 25;
+            if (type === 'speed') u.val += 0.5;
+            if (type === 'steal') u.val += 30;
+            if (type === 'shield') u.val += 0.8;
+            if (type === 'health') {
+                u.val += 25;
+                player.maxHealth = u.val;
+                player.health = Math.min(player.maxHealth, player.health + 25);
+            }
+
+            sound.playPickup();
+            updateHUD();
+        }
+
+        function toggleUpgrades(show) {
+            document.getElementById('upgradeModal').style.display = show ? 'flex' : 'none';
+            if (show) updateUpgradeModalUI();
+        }
+
+        function populateCodex() {
+            const grid = document.getElementById('codexGrid');
+            grid.innerHTML = '';
+            ELEMENTS.forEach(elem => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-2.5 rounded-xl border border-slate-700/60 flex items-center gap-2.5';
+                card.innerHTML = `
+                    <div class="w-10 h-10 rounded-lg flex flex-col items-center justify-center font-bold text-sm" style="background:${elem.color}20; border:1px solid ${elem.color}">
+                        <span class="text-[9px] text-slate-300 -mb-1">${elem.z}</span>
+                        <span style="color:${elem.color}">${elem.symbol}</span>
+                    </div>
+                    <div>
+                        <div class="font-bold text-xs text-white">${elem.name}</div>
+                        <div class="text-[10px] text-slate-400 capitalize">${elem.class}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleCodex(show) {
+            document.getElementById('codexModal').style.display = show ? 'flex' : 'none';
+        }
+
+        function startGame() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            player = new Player();
+            score = 0;
+            upgradePoints = 0;
+
+            cpus = Array.from({ length: 12 }, () => new CPUBot());
+            electrons = Array.from({ length: 60 }, () => new ElectronPickup());
+            radicals = Array.from({ length: 16 }, () => new Radical());
+            antioxidants = Array.from({ length: 10 }, () => new Antioxidant());
+            particles = [];
+            floatingTexts = [];
+
+            gameActive = true;
+            populateCodex();
+            updateHUD();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('modalTitle').innerText = 'Atomic Decay!';
+            document.getElementById('modalSubtitle').innerText = `Final Score: ${score}`;
+            document.getElementById('modalDesc').innerText = `Your atomic bonds degraded under hydroxide ion attacks. Spend upgrade points early to boost speed and shield strength!`;
+            document.getElementById('btnStartGame').innerText = 'RESTART EVOLUTION';
+            document.getElementById('modalOverlay').style.display = 'flex';
+        }
+
+        // Main Loop Engine
+        function gameLoop() {
+            if (!gameActive) return;
+
+            player.update();
+
+            const camX = player.x - width / 2;
+            const camY = player.y - height / 2;
+
+            cpus.forEach(c => c.update());
+            electrons.forEach(e => e.update(player));
+            radicals.forEach(r => r.update(player));
+            antioxidants.forEach(a => a.update(player));
+
+            particles.forEach(p => p.update());
+            particles = particles.filter(p => p.life > 0);
+
+            floatingTexts.forEach(ft => ft.update());
+            floatingTexts = floatingTexts.filter(ft => ft.alpha > 0);
+
+            // Render World Grid
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.lineWidth = 1;
+            const gridSize = 100;
+            const startX = -(camX % gridSize);
+            const startY = -(camY % gridSize);
+
+            for (let x = startX; x < width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let y = startY; y < height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // Draw Entities
+            electrons.forEach(e => e.draw(camX, camY));
+            antioxidants.forEach(a => a.draw(camX, camY));
+            cpus.forEach(c => c.draw(camX, camY));
+            radicals.forEach(r => r.draw(camX, camY));
+            particles.forEach(p => p.draw(camX, camY));
+            player.draw(camX, camY);
+            floatingTexts.forEach(ft => ft.draw(camX, camY));
+
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
