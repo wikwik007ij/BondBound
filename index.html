@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>BondBound: วิวัฒนาการพันธะเคมีไร้ขีดจำกัด</title>
+  <title>BondBound: Full Periodic Table Evolution</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body, html { width: 100%; height: 100%; overflow: hidden; background: #05070e; font-family: 'Sarabun', 'Segoe UI', system-ui, sans-serif; color: #fff; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #05070e; font-family: 'Tahoma', 'Segoe UI', system-ui, sans-serif; color: #fff; }
     canvas { display: block; width: 100vw; height: 100vh; background: radial-gradient(circle at center, #0a0f24 0%, #030408 100%); }
     
     /* HUD Overlays */
     #hud { position: absolute; top: 16px; left: 16px; z-index: 10; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
     .hud-card { background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,229,255,0.15); min-width: 240px; }
-    .element-title { font-size: 1.5rem; font-weight: 800; color: #00e5ff; display: flex; align-items: center; justify-content: space-between; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+    .element-title { font-size: 1.6rem; font-weight: 800; color: #00e5ff; display: flex; align-items: center; justify-content: space-between; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
     .stat-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; margin-top: 6px; border: 1px solid rgba(0,229,255,0.2); }
     .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #ff1744, #00e5ff); width: 100%; transition: width 0.15s ease; box-shadow: 0 0 8px #00e5ff; }
     
@@ -22,7 +22,7 @@
     
     /* Dynamic Notifications */
     #notif-container { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    .notif { background: rgba(255, 23, 68, 0.9); color: #fff; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 0.95rem; animation: floatUp 1.8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; border: 1px solid #ff1744; box-shadow: 0 0 15px rgba(255,23,68,0.4); text-align: center; }
+    .notif { background: rgba(255, 23, 68, 0.9); color: #fff; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 0.95rem; animation: floatUp 1.8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; border: 1px solid #ff1744; box-shadow: 0 0 15px rgba(255,23,68,0.4); }
     .notif-success { background: rgba(0, 230, 118, 0.9); border-color: #00e676; color: #05070e; box-shadow: 0 0 15px rgba(0,230,118,0.4); }
     @keyframes floatUp { 0% { opacity: 0; transform: translateY(15px) scale(0.9); } 15% { opacity: 1; transform: translateY(0) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-25px) scale(0.95); } }
 
@@ -52,7 +52,7 @@
   <div id="hud">
     <div class="hud-card">
       <div class="element-title"><span id="elem-sym">H</span> <span id="elem-name" style="font-size: 1rem; color: #88a0c0; font-weight: 600;">ไฮโดรเจน</span></div>
-      <div style="font-size: 0.85rem; color: #a0b5d0; margin-top:4px;">ค่าอิเล็กโทรเนกาติวิตี (EN): <span id="elem-en" style="color:#ffea00; font-weight:bold;">2.20</span></div>
+      <div style="font-size: 0.85rem; color: #a0b5d0; margin-top:4px;">ค่า EN ($\chi$): <span id="elem-en" style="color:#ffea00; font-weight:bold;">2.20</span> | Z: <span id="elem-z" style="color:#00e5ff; font-weight:bold;">1</span></div>
       <div class="stat-bar-bg"><div id="hp-bar" class="stat-bar-fill"></div></div>
       <div style="font-size: 0.8rem; margin-top: 6px; color: #88a0c0;">เวเลนซ์อิเล็กตรอน: <span id="val-count" style="color:#fff; font-weight:bold;">1/2</span></div>
       <div style="font-size: 0.8rem; margin-top: 2px; color: #00e5ff;">อะตอมในวงโคจร: <span id="orbit-count" style="font-weight:bold;">0</span></div>
@@ -65,7 +65,7 @@
 
   <!-- Control Buttons -->
   <div id="controls-container">
-    <button class="btn" id="btn-bond" tabindex="-1">สร้างพันธะ / คลื่นกระแทก (Space)</button>
+    <button class="btn" id="btn-bond" tabindex="-1">สร้างพันธะ / ปล่อยคลื่น (Space)</button>
     <button class="btn" id="btn-upgrades" tabindex="-1">อัปเกรด (U)</button>
   </div>
 
@@ -75,7 +75,7 @@
   <!-- Upgrades Modal -->
   <div class="modal" id="modal-upgrades">
     <div class="modal-content">
-      <div class="modal-title">วิวัฒนาการทางอะตอม</div>
+      <div class="modal-title">วิวัฒนาการระดับอะตอม</div>
       <div style="font-size: 0.95rem; color: #a0b5d0; margin-bottom: 16px;">แต้มวิวัฒนาการ: <span id="pts-count" style="color:#00e5ff; font-weight:bold;">0</span></div>
       
       <div class="upgrade-row">
@@ -83,11 +83,11 @@
         <button class="btn" onclick="buyUpgrade('pull')" tabindex="-1">อัปเกรด (+30)</button>
       </div>
       <div class="upgrade-row">
-        <div><strong>ความเร็วอะตอม</strong><br><small style="color:#6680a0">ความเร็วในการเคลื่อนที่</small></div>
+        <div><strong>ความเร็วอะตอม</strong><br><small style="color:#6680a0">ความเร็วการเคลื่อนที่</small></div>
         <button class="btn" onclick="buyUpgrade('speed')" tabindex="-1">อัปเกรด (+0.8)</button>
       </div>
       <div class="upgrade-row">
-        <div><strong>ระยะพันธะ</strong><br><small style="color:#6680a0">รัศมีการดึงดูดและสร้างพันธะ</small></div>
+        <div><strong>ระยะพันธะ</strong><br><small style="color:#6680a0">ระยะการดึงและเชื่อมพันธะ</small></div>
         <button class="btn" onclick="buyUpgrade('range')" tabindex="-1">อัปเกรด (+30)</button>
       </div>
       
@@ -101,13 +101,13 @@
   <div class="modal" id="modal-gameover" style="display:none;">
     <div class="modal-content">
       <div class="modal-title" style="color:#ff1744; text-shadow: 0 0 10px rgba(255,23,68,0.5);">อะตอมสลายตัว!</div>
-      <p style="color:#a0b5d0; margin-bottom: 20px;">ธาตุของคุณถูกทำลายโดยอนุมูลอิสระ</p>
+      <p style="color:#a0b5d0; margin-bottom: 20px;">โครงสร้างอะตอมของคุณถูกอนุมูลอิสระทำลายจนหมดสิ้น</p>
       <button class="btn" onclick="restartGame()" tabindex="-1">สังเคราะห์ใหม่ (เริ่มใหม่)</button>
     </div>
   </div>
 
 <script>
-// PERIODIC TABLE DATA & ELECTRONEGATIVITY WITH THAI NAMES
+// COMPLETE PERIODIC TABLE DATA (1 - 118)
 const ELEMENTS = [
   { z: 1, sym: 'H', name: 'ไฮโดรเจน', maxVal: 2, type: 'nonmetal', en: 2.20, color: '#ffffff' },
   { z: 2, sym: 'He', name: 'ฮีเลียม', maxVal: 2, type: 'noble', en: 0.00, color: '#d9ffff' },
@@ -121,8 +121,112 @@ const ELEMENTS = [
   { z: 10, sym: 'Ne', name: 'นีออน', maxVal: 8, type: 'noble', en: 0.00, color: '#ff66cc' },
   { z: 11, sym: 'Na', name: 'โซเดียม', maxVal: 8, type: 'metal', en: 0.93, color: '#ab5cf2' },
   { z: 12, sym: 'Mg', name: 'แมกนีเซียม', maxVal: 8, type: 'metal', en: 1.31, color: '#8aff00' },
+  { z: 13, sym: 'Al', name: 'อะลูมิเนียม', maxVal: 8, type: 'metal', en: 1.61, color: '#a0a0a0' },
+  { z: 14, sym: 'Si', name: 'ซิลิคอน', maxVal: 8, type: 'metalloid', en: 1.90, color: '#f0c080' },
+  { z: 15, sym: 'P', name: 'ฟอสฟอรัส', maxVal: 8, type: 'nonmetal', en: 2.19, color: '#ff9900' },
+  { z: 16, sym: 'S', name: 'กำมะถัน', maxVal: 8, type: 'nonmetal', en: 2.58, color: '#ffff00' },
   { z: 17, sym: 'Cl', name: 'คลอรีน', maxVal: 8, type: 'nonmetal', en: 3.16, color: '#1ff073' },
-  { z: 18, sym: 'Ar', name: 'อาร์กอน', maxVal: 8, type: 'noble', en: 0.00, color: '#00e5ff' }
+  { z: 18, sym: 'Ar', name: 'อาร์กอน', maxVal: 8, type: 'noble', en: 0.00, color: '#00e5ff' },
+  { z: 19, sym: 'K', name: 'โพแทสเซียม', maxVal: 8, type: 'metal', en: 0.82, color: '#8f33ff' },
+  { z: 20, sym: 'Ca', name: 'แคลเซียม', maxVal: 8, type: 'metal', en: 1.00, color: '#33ff33' },
+  { z: 21, sym: 'Sc', name: 'สแกนเดียม', maxVal: 12, type: 'metal', en: 1.36, color: '#e6e6e6' },
+  { z: 22, sym: 'Ti', name: 'ไทเทเนียม', maxVal: 12, type: 'metal', en: 1.54, color: '#bfc2c7' },
+  { z: 23, sym: 'V', name: 'วาเนเดียม', maxVal: 12, type: 'metal', en: 1.63, color: '#a6a6a6' },
+  { z: 24, sym: 'Cr', name: 'โครเมียม', maxVal: 12, type: 'metal', en: 1.66, color: '#8a99ad' },
+  { z: 25, sym: 'Mn', name: 'แมงกานีส', maxVal: 12, type: 'metal', en: 1.55, color: '#9c8c9c' },
+  { z: 26, sym: 'Fe', name: 'เหล็ก', maxVal: 12, type: 'metal', en: 1.83, color: '#e06666' },
+  { z: 27, sym: 'Co', name: 'โคบอลต์', maxVal: 12, type: 'metal', en: 1.88, color: '#f08a5d' },
+  { z: 28, sym: 'Ni', name: 'นิกเกิล', maxVal: 12, type: 'metal', en: 1.91, color: '#5b8c5a' },
+  { z: 29, sym: 'Cu', name: 'ทองแดง', maxVal: 12, type: 'metal', en: 1.90, color: '#c87d55' },
+  { z: 30, sym: 'Zn', name: 'สังกะสี', maxVal: 12, type: 'metal', en: 1.65, color: '#7d8fa3' },
+  { z: 31, sym: 'Ga', name: 'แกลเลียม', maxVal: 8, type: 'metal', en: 1.81, color: '#c28dcf' },
+  { z: 32, sym: 'Ge', name: 'เจอร์เมเนียม', maxVal: 8, type: 'metalloid', en: 2.01, color: '#66b2b2' },
+  { z: 33, sym: 'As', name: 'สารหนู', maxVal: 8, type: 'metalloid', en: 2.18, color: '#bdc581' },
+  { z: 34, sym: 'Se', name: 'ซีลีเนียม', maxVal: 8, type: 'nonmetal', en: 2.55, color: '#ffa800' },
+  { z: 35, sym: 'Br', name: 'โบรมีน', maxVal: 8, type: 'nonmetal', en: 2.96, color: '#a83232' },
+  { z: 36, sym: 'Kr', name: 'คริปตอน', maxVal: 8, type: 'noble', en: 3.00, color: '#5cf2bd' },
+  { z: 37, sym: 'Rb', name: 'รูบิเดียม', maxVal: 8, type: 'metal', en: 0.82, color: '#701b9b' },
+  { z: 38, sym: 'Sr', name: 'สตรอนเชียม', maxVal: 8, type: 'metal', en: 0.95, color: '#00cc44' },
+  { z: 39, sym: 'Y', name: 'อิตเทรียม', maxVal: 12, type: 'metal', en: 1.22, color: '#94e0e0' },
+  { z: 40, sym: 'Zr', name: 'เซอร์โคเนียม', maxVal: 12, type: 'metal', en: 1.33, color: '#94e0c0' },
+  { z: 41, sym: 'Nb', name: 'ไนโอเบียม', maxVal: 12, type: 'metal', en: 1.60, color: '#73c2c2' },
+  { z: 42, sym: 'Mo', name: 'โมลิบดีนัม', maxVal: 12, type: 'metal', en: 2.16, color: '#54b5b5' },
+  { z: 43, sym: 'Tc', name: 'เทคนีเชียม', maxVal: 12, type: 'metal', en: 1.90, color: '#3b9e9e' },
+  { z: 44, sym: 'Ru', name: 'รูทีเนียม', maxVal: 12, type: 'metal', en: 2.20, color: '#278787' },
+  { z: 45, sym: 'Rh', name: 'โรเดียม', maxVal: 12, type: 'metal', en: 2.28, color: '#176e6e' },
+  { z: 46, sym: 'Pd', name: 'พัลเลเดียม', maxVal: 12, type: 'metal', en: 2.20, color: '#698585' },
+  { z: 47, sym: 'Ag', name: 'เงิน', maxVal: 12, type: 'metal', en: 1.93, color: '#e6f2ff' },
+  { z: 48, sym: 'Cd', name: 'แคดเมียม', maxVal: 12, type: 'metal', en: 1.69, color: '#ffd966' },
+  { z: 49, sym: 'In', name: 'อินเดียม', maxVal: 8, type: 'metal', en: 1.78, color: '#a3b899' },
+  { z: 50, sym: 'Sn', name: 'ดีบุก', maxVal: 8, type: 'metal', en: 1.96, color: '#b0c4de' },
+  { z: 51, sym: 'Sb', name: 'พลวง', maxVal: 8, type: 'metalloid', en: 2.05, color: '#9e9d24' },
+  { z: 52, sym: 'Te', name: 'เทลลูเรียม', maxVal: 8, type: 'metalloid', en: 2.10, color: '#d4e157' },
+  { z: 53, sym: 'I', name: 'ไอโอดีน', maxVal: 8, type: 'nonmetal', en: 2.66, color: '#9400d3' },
+  { z: 54, sym: 'Xe', name: 'ซีนอน', maxVal: 8, type: 'noble', en: 2.60, color: '#42a5f5' },
+  { z: 55, sym: 'Cs', name: 'ซีเซียม', maxVal: 8, type: 'metal', en: 0.79, color: '#512da8' },
+  { z: 56, sym: 'Ba', name: 'แบเรียม', maxVal: 8, type: 'metal', en: 0.89, color: '#00897b' },
+  { z: 57, sym: 'La', name: 'แลนทานัม', maxVal: 14, type: 'metal', en: 1.10, color: '#70d6ff' },
+  { z: 58, sym: 'Ce', name: 'ซีเรียม', maxVal: 14, type: 'metal', en: 1.12, color: '#fffffc' },
+  { z: 59, sym: 'Pr', name: 'เพรซิโอดีเมียม', maxVal: 14, type: 'metal', en: 1.13, color: '#d8f3dc' },
+  { z: 60, sym: 'Nd', name: 'นีโอดีเมียม', maxVal: 14, type: 'metal', en: 1.14, color: '#b7e4c7' },
+  { z: 61, sym: 'Pm', name: 'โพรมีเทียม', maxVal: 14, type: 'metal', en: 1.13, color: '#95d5b2' },
+  { z: 62, sym: 'Sm', name: 'ซาแมเรียม', maxVal: 14, type: 'metal', en: 1.17, color: '#74c69d' },
+  { z: 63, sym: 'Eu', name: 'ยูโรเปียม', maxVal: 14, type: 'metal', en: 1.20, color: '#52b788' },
+  { z: 64, sym: 'Gd', name: 'กาดอลิเนียม', maxVal: 14, type: 'metal', en: 1.20, color: '#40916c' },
+  { z: 65, sym: 'Tb', name: 'เทอร์เบียม', maxVal: 14, type: 'metal', en: 1.10, color: '#2d6a4f' },
+  { z: 66, sym: 'Dy', name: 'ดิสโพรเซียม', maxVal: 14, type: 'metal', en: 1.22, color: '#1b4332' },
+  { z: 67, sym: 'Ho', name: 'โฮลเมียม', maxVal: 14, type: 'metal', en: 1.23, color: '#081c15' },
+  { z: 68, sym: 'Er', name: 'เออร์เบียม', maxVal: 14, type: 'metal', en: 1.24, color: '#252422' },
+  { z: 69, sym: 'Tm', name: 'ทูเลียม', maxVal: 14, type: 'metal', en: 1.25, color: '#403d39' },
+  { z: 70, sym: 'Yb', name: 'อิตเทอร์เบียม', maxVal: 14, type: 'metal', en: 1.10, color: '#ccc5b9' },
+  { z: 71, sym: 'Lu', name: 'ลูทีเชียม', maxVal: 14, type: 'metal', en: 1.27, color: '#fffcf2' },
+  { z: 72, sym: 'Hf', name: 'แฮฟเนียม', maxVal: 12, type: 'metal', en: 1.30, color: '#4d908e' },
+  { z: 73, sym: 'Ta', name: 'แทนทาลัม', maxVal: 12, type: 'metal', en: 1.50, color: '#277da1' },
+  { z: 74, sym: 'W', name: 'ทังสเตน', maxVal: 12, type: 'metal', en: 2.36, color: '#f9c74f' },
+  { z: 75, sym: 'Re', name: 'เรเนียม', maxVal: 12, type: 'metal', en: 1.90, color: '#f8961e' },
+  { z: 76, sym: 'Os', name: 'ออสเมียม', maxVal: 12, type: 'metal', en: 2.20, color: '#f3722c' },
+  { z: 77, sym: 'Ir', name: 'อิริเดียม', maxVal: 12, type: 'metal', en: 2.20, color: '#f94144' },
+  { z: 78, sym: 'Pt', name: 'พลาทินัม', maxVal: 12, type: 'metal', en: 2.28, color: '#e0e0e0' },
+  { z: 79, sym: 'Au', name: 'ทองคำ', maxVal: 12, type: 'metal', en: 2.54, color: '#ffd700' },
+  { z: 80, sym: 'Hg', name: 'ปรอท', maxVal: 12, type: 'metal', en: 2.00, color: '#b8c0c8' },
+  { z: 81, sym: 'Tl', name: 'แทลเลียม', maxVal: 8, type: 'metal', en: 1.62, color: '#a39282' },
+  { z: 82, sym: 'Pb', name: 'ตะกั่ว', maxVal: 8, type: 'metal', en: 2.33, color: '#5c6b73' },
+  { z: 83, sym: 'Bi', name: 'บิสมัท', maxVal: 8, type: 'metal', en: 2.02, color: '#9dbebb' },
+  { z: 84, sym: 'Po', name: 'โพออโลเนียม', maxVal: 8, type: 'metalloid', en: 2.00, color: '#abcca4' },
+  { z: 85, sym: 'At', name: 'แอสทาทีน', maxVal: 8, type: 'nonmetal', en: 2.20, color: '#886288' },
+  { z: 86, sym: 'Rn', name: 'เรดอน', maxVal: 8, type: 'noble', en: 0.00, color: '#00b4d8' },
+  { z: 87, sym: 'Fr', name: 'แฟรนเซียม', maxVal: 8, type: 'metal', en: 0.70, color: '#3a0ca3' },
+  { z: 88, sym: 'Ra', name: 'เรเดียม', maxVal: 8, type: 'metal', en: 0.90, color: '#00f5d4' },
+  { z: 89, sym: 'Ac', name: 'แอกทิเนียม', maxVal: 16, type: 'metal', en: 1.10, color: '#7b2cbf' },
+  { z: 90, sym: 'Th', name: 'ทอเรียม', maxVal: 16, type: 'metal', en: 1.30, color: '#9d4edd' },
+  { z: 91, sym: 'Pa', name: 'โพรแทกทิเนียม', maxVal: 16, type: 'metal', en: 1.50, color: '#c77dff' },
+  { z: 92, sym: 'U', name: 'ยูเรเนียม', maxVal: 16, type: 'metal', en: 1.38, color: '#39ff14' },
+  { z: 93, sym: 'Np', name: 'เนปทูเนียม', maxVal: 16, type: 'metal', en: 1.36, color: '#00e5ff' },
+  { z: 94, sym: 'Pu', name: 'พลูโทเนียม', maxVal: 16, type: 'metal', en: 1.28, color: '#ff0055' },
+  { z: 95, sym: 'Am', name: 'อะเมริเซียม', maxVal: 16, type: 'metal', en: 1.30, color: '#ff5400' },
+  { z: 96, sym: 'Cm', name: 'คูเรียม', maxVal: 16, type: 'metal', en: 1.30, color: '#ff0054' },
+  { z: 97, sym: 'Bk', name: 'เบอร์เคเลียม', maxVal: 16, type: 'metal', en: 1.30, color: '#9e0059' },
+  { z: 98, sym: 'Cf', name: 'แคลิฟอร์เนียม', maxVal: 16, type: 'metal', en: 1.30, color: '#ffbd00' },
+  { z: 99, sym: 'Es', name: 'ไอน์สไตเนียม', maxVal: 16, type: 'metal', en: 1.30, color: '#ff5400' },
+  { z: 100, sym: 'Fm', name: 'เฟอร์เมียม', maxVal: 16, type: 'metal', en: 1.30, color: '#ff0054' },
+  { z: 101, sym: 'Md', name: 'เมนเดเลเวียม', maxVal: 16, type: 'metal', en: 1.30, color: '#7000ff' },
+  { z: 102, sym: 'No', name: 'โนเบเลียม', maxVal: 16, type: 'metal', en: 1.30, color: '#00f0ff' },
+  { z: 103, sym: 'Lr', name: 'ลอเรนเซียม', maxVal: 16, type: 'metal', en: 1.30, color: '#00ff66' },
+  { z: 104, sym: 'Rf', name: 'รัทเทอร์ฟอร์เดียม', maxVal: 18, type: 'metal', en: 1.30, color: '#ff0033' },
+  { z: 105, sym: 'Db', name: 'ดุบเนียม', maxVal: 18, type: 'metal', en: 1.30, color: '#ff3300' },
+  { z: 106, sym: 'Sg', name: 'ซีบอร์เกียม', maxVal: 18, type: 'metal', en: 1.30, color: '#ff6600' },
+  { z: 107, sym: 'Bh', name: 'โบห์เรียม', maxVal: 18, type: 'metal', en: 1.30, color: '#ff9900' },
+  { z: 108, sym: 'Hs', name: 'ฮัสเซียม', maxVal: 18, type: 'metal', en: 1.30, color: '#ffcc00' },
+  { z: 109, sym: 'Mt', name: 'ไมต์เนเรียม', maxVal: 18, type: 'metal', en: 1.30, color: '#ffff00' },
+  { z: 110, sym: 'Ds', name: 'ดาร์มสตัดเทียม', maxVal: 18, type: 'metal', en: 1.30, color: '#ccff00' },
+  { z: 111, sym: 'Rg', name: 'เรินต์เกเนียม', maxVal: 18, type: 'metal', en: 1.30, color: '#99ff00' },
+  { z: 112, sym: 'Cn', name: 'โคเปอร์นิเซียม', maxVal: 18, type: 'metal', en: 1.30, color: '#66ff00' },
+  { z: 113, sym: 'Nh', name: 'นิโฮเนียม', maxVal: 18, type: 'metal', en: 1.30, color: '#33ff00' },
+  { z: 114, sym: 'Fl', name: 'ฟลีโรเวียม', maxVal: 18, type: 'metal', en: 1.30, color: '#00ff33' },
+  { z: 115, sym: 'Mc', name: 'มอสโกเวียม', maxVal: 18, type: 'metal', en: 1.30, color: '#00ff66' },
+  { z: 116, sym: 'Lv', name: 'ลิเวอร์มอเรียม', maxVal: 18, type: 'metal', en: 1.30, color: '#00ff99' },
+  { z: 117, sym: 'Ts', name: 'เทนเนสซีน', maxVal: 18, type: 'nonmetal', en: 1.30, color: '#00ffcc' },
+  { z: 118, sym: 'Og', name: 'โอกาเนสซอน', maxVal: 18, type: 'noble', en: 0.00, color: '#ffffff' }
 ];
 
 // Setup Canvas
@@ -133,7 +237,7 @@ window.addEventListener('resize', resize);
 resize();
 
 // Game Variables
-let mapSize = 2600;
+let mapSize = 3200;
 let player, electrons, cpus, hazards, particles, shockwaves, keys, isGameOver;
 let orbitAngleGlobal = 0;
 let lastHitTime = 0;
@@ -162,13 +266,13 @@ function initGame() {
   shockwaves = [];
   keys = {};
 
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 220; i++) {
     electrons.push({ x: Math.random() * mapSize, y: Math.random() * mapSize });
   }
 
-  for (let i = 0; i < 35; i++) cpus.push(spawnCPU());
+  for (let i = 0; i < 45; i++) cpus.push(spawnCPU());
 
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 22; i++) {
     hazards.push({
       x: Math.random() * mapSize,
       y: Math.random() * mapSize,
@@ -181,14 +285,20 @@ function initGame() {
 }
 
 function spawnCPU() {
+  // Balance spawn near player level or random
+  let pIdx = player ? player.elemIdx : 0;
+  let minIdx = Math.max(0, pIdx - 3);
+  let maxIdx = Math.min(ELEMENTS.length - 1, pIdx + 5);
+  let randIdx = Math.floor(minIdx + Math.random() * (maxIdx - minIdx + 1));
+
   return {
     x: Math.random() * mapSize,
     y: Math.random() * mapSize,
-    elemIdx: Math.floor(Math.random() * ELEMENTS.length)
+    elemIdx: randIdx
   };
 }
 
-// Keyboard Listeners
+// Controls
 window.addEventListener('keydown', e => {
   if (isGameOver) return;
   let k = e.key.toLowerCase();
@@ -272,6 +382,7 @@ function restartGame() {
   initGame();
 }
 
+// Bonding Logic
 function attemptBonding() {
   if (isGameOver) return;
   let now = Date.now();
@@ -290,29 +401,27 @@ function attemptBonding() {
     let targetCpu = cpus[closestIdx];
     let targetElem = ELEMENTS[targetCpu.elemIdx];
 
-    if (targetElem.en > curElem.en) {
-      showNotif(`สร้างพันธะล้มเหลว! EN เป้าหมาย (${targetElem.en}) > ของคุณ (${curElem.en})`);
+    if (targetElem.en > curElem.en && curElem.en > 0) {
+      showNotif(`สร้างพันธะไม่ได้! EN เป้าหมาย (${targetElem.en}) > ของคุณ (${curElem.en})`);
       return;
     }
 
-    // Attach target CPU to orbit list
     player.bondedOrbiters.push({ elemIdx: targetCpu.elemIdx });
     
-    // Remove bonded CPU and spawn a new one elsewhere
     cpus.splice(closestIdx, 1);
     cpus.push(spawnCPU());
 
     createBurst(player.x, player.y, targetElem.color, 20);
 
     if (curElem.type === 'metal' && targetElem.type === 'nonmetal') {
-      addBuff('การพุ่งทะยานไอออนิก', 'speed', 8000);
+      addBuff('เร่งพลังไอออนิก', 'speed', 8000);
       player.valElectrons++;
       showNotif(`พันธะไอออนิก! ดึง ${targetElem.sym} เข้าสู่วงโคจร!`, true);
     } else if (curElem.type === 'nonmetal' && targetElem.type === 'nonmetal') {
       addBuff('เกราะโควาเลนต์', 'shield', 10000);
       showNotif(`พันธะโควาเลนต์! ดึง ${targetElem.sym} เข้าสู่วงโคจร!`, true);
     } else {
-      addBuff('คลื่นพัลส์โลหะ', 'repel', 8000);
+      addBuff('คลื่นโลหะสะท้อน', 'repel', 8000);
       showNotif(`พันธะโลหะ! ดึง ${targetElem.sym} เข้าสู่วงโคจร!`, true);
     }
 
@@ -320,7 +429,6 @@ function attemptBonding() {
     return;
   }
 
-  // Shockwave Pulse when no atom is near
   if (player.bondedOrbiters.length > 0) {
     if (now - player.lastBondTime < 1500) return;
     player.lastBondTime = now;
@@ -334,9 +442,9 @@ function attemptBonding() {
         h.y += Math.sin(ang) * 120;
       }
     }
-    showNotif("ปลดปล่อยคลื่นกระแทกวงโคจร!", true);
+    showNotif("ปล่อยคลื่นพลังโคจร!", true);
   } else {
-    showNotif("ไม่มีเป้าหมายอะตอมในระยะ!");
+    showNotif("ไม่มีอะตอมเป้าหมายในระยะ!");
   }
 }
 
@@ -359,19 +467,22 @@ function checkEvolution() {
       player.upgradePts += 2;
       createBurst(player.x, player.y, '#00e5ff', 30);
       showNotif(`วิวัฒนาการเป็น ${ELEMENTS[player.elemIdx].name}! (+2 แต้ม)`, true);
+    } else {
+      showNotif("คุณบรรลุวิวัฒนาการสูงสุด: Oganesson (Og) แล้ว!", true);
     }
   }
 }
 
 function buyUpgrade(type) {
-  if (player.upgradePts < 1) { showNotif("แต้มวิวัฒนาการไม่เพียงพอ!"); return; }
+  if (player.upgradePts < 1) { showNotif("แต้มวิวัฒนาการไม่พอ!"); return; }
   if (type === 'pull') player.pullRadius += 30;
   if (type === 'speed') player.speed += 0.8;
   if (type === 'range') player.bondRange += 30;
   player.upgradePts--;
-  showNotif("อัปเกรดเรียบร้อย!", true);
+  showNotif("อัปเกรดสำเร็จ!", true);
 }
 
+// Game Loop
 function update() {
   if (isGameOver) return;
 
@@ -381,7 +492,6 @@ function update() {
 
   orbitAngleGlobal += 0.03;
 
-  // WASD / Arrow / Touch Controls
   let dx = 0, dy = 0;
   if (keys['a'] || keys['arrowleft']) dx -= 1;
   if (keys['d'] || keys['arrowright']) dx += 1;
@@ -421,14 +531,14 @@ function update() {
     }
   }
 
-  // Update Shockwaves
+  // Shockwaves
   for (let i = shockwaves.length - 1; i >= 0; i--) {
     let sw = shockwaves[i];
     sw.radius += 8;
     if (sw.radius > sw.maxRadius) shockwaves.splice(i, 1);
   }
 
-  // Update Particles
+  // Particles
   for (let i = particles.length - 1; i >= 0; i--) {
     let p = particles[i];
     p.x += p.vx; p.y += p.vy;
@@ -436,7 +546,7 @@ function update() {
     if (p.life <= 0) particles.splice(i, 1);
   }
 
-  // Hazards AI & BALANCED DAMAGE SYSTEM
+  // Hazards AI
   let now = Date.now();
   for (let h of hazards) {
     let d = Math.hypot(player.x - h.x, player.y - h.y);
@@ -447,7 +557,6 @@ function update() {
       h.x += (player.x - h.x) * 0.025;
       h.y += (player.y - h.y) * 0.025;
       
-      // Hit detection with Cooldown
       if (d < 26 && now - lastHitTime > 500) {
         lastHitTime = now;
         let dmg = 18;
@@ -455,12 +564,10 @@ function update() {
         player.hp -= dmg;
         createBurst(player.x, player.y, '#ff1744', 15);
 
-        // Knock back hazard slightly
         let ang = Math.atan2(h.y - player.y, h.x - player.x);
         h.x += Math.cos(ang) * 60;
         h.y += Math.sin(ang) * 60;
 
-        // CHECK DEATH CONDITION
         if (player.hp <= 0) {
           player.hp = 0;
           isGameOver = true;
@@ -470,13 +577,13 @@ function update() {
     }
   }
 
-  // Update Buffs
   player.activeBuffs = player.activeBuffs.filter(b => b.endTime > now);
 
-  // Update HUD Text with Thai Localizations
+  // Update HUD
   document.getElementById('elem-sym').innerText = curElem.sym;
   document.getElementById('elem-name').innerText = curElem.name;
   document.getElementById('elem-en').innerText = curElem.en.toFixed(2);
+  document.getElementById('elem-z').innerText = curElem.z;
   document.getElementById('val-count').innerText = `${player.valElectrons}/${curElem.maxVal}`;
   document.getElementById('orbit-count').innerText = player.bondedOrbiters.length;
   document.getElementById('hp-bar').style.width = Math.max(0, (player.hp / player.maxHp) * 100) + '%';
@@ -487,7 +594,7 @@ function update() {
   for (let b of player.activeBuffs) {
     let badge = document.createElement('div');
     badge.className = 'buff-badge';
-    badge.innerText = `${b.name} (${Math.ceil((b.endTime - now) / 1000)}วิ)`;
+    badge.innerText = `${b.name} (${Math.ceil((b.endTime - now) / 1000)}s)`;
     buffBar.appendChild(badge);
   }
 }
@@ -512,7 +619,7 @@ function render() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(mapSize, y); ctx.stroke();
   }
 
-  // Render Shockwaves
+  // Shockwaves
   for (let sw of shockwaves) {
     ctx.strokeStyle = sw.color;
     ctx.lineWidth = 3;
@@ -521,7 +628,7 @@ function render() {
     ctx.globalAlpha = 1.0;
   }
 
-  // Render Electrons
+  // Electrons
   ctx.fillStyle = '#ffea00';
   ctx.shadowColor = '#ffea00';
   ctx.shadowBlur = 8;
@@ -530,7 +637,7 @@ function render() {
   }
   ctx.shadowBlur = 0;
 
-  // Render Particles
+  // Particles
   for (let p of particles) {
     ctx.fillStyle = p.color;
     ctx.globalAlpha = p.life;
@@ -538,7 +645,7 @@ function render() {
   }
   ctx.globalAlpha = 1.0;
 
-  // Render CPU Atoms
+  // CPU Atoms
   for (let cpu of cpus) {
     let eData = ELEMENTS[cpu.elemIdx];
     ctx.fillStyle = eData.color;
@@ -546,11 +653,11 @@ function render() {
     ctx.shadowBlur = 10;
     ctx.beginPath(); ctx.arc(cpu.x, cpu.y, 18, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#05070e'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#05070e'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(eData.sym, cpu.x, cpu.y + 4);
   }
 
-  // Render Hazards
+  // Hazards
   for (let h of hazards) {
     ctx.fillStyle = '#ff1744';
     ctx.shadowColor = '#ff1744';
@@ -566,17 +673,16 @@ function render() {
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(player.x, player.y, player.bondRange, 0, Math.PI * 2); ctx.stroke();
 
-  // RENDER GUARANTEED ORBITING BONDED ATOMS
+  // RENDER ORBITING ATOMS (Dynamic multi-orbit ring logic)
   let orbCount = player.bondedOrbiters.length;
   if (orbCount > 0) {
-    let shells = orbCount <= 2 ? [orbCount] : [2, orbCount - 2];
+    let shells = orbCount <= 4 ? [orbCount] : [4, orbCount - 4];
     let orbIdx = 0;
 
     for (let s = 0; s < shells.length; s++) {
       let countInShell = shells[s];
       let dist = 65 + (s * 35);
 
-      // Orbital Path Ring
       ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([5, 5]);
@@ -593,12 +699,10 @@ function render() {
 
         let orbElem = ELEMENTS[orb.elemIdx];
 
-        // Draw Energy Link Beam
         ctx.strokeStyle = 'rgba(0, 229, 255, 0.6)';
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(ox, oy); ctx.stroke();
 
-        // Orbiting Atom Node
         ctx.fillStyle = orbElem.color;
         ctx.shadowColor = orbElem.color;
         ctx.shadowBlur = 12;
@@ -619,7 +723,7 @@ function render() {
   ctx.beginPath(); ctx.arc(player.x, player.y, 22, 0, Math.PI * 2); ctx.fill();
   ctx.shadowBlur = 0;
 
-  ctx.fillStyle = '#05070e'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#05070e'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
   ctx.fillText(curElem.sym, player.x, player.y + 5);
 
   ctx.restore();
