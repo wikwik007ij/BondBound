@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>BondBound: Chemical Bond Buffs</title>
+  <title>BondBound: Orbital Chemical Bonding</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body, html { width: 100%; height: 100%; overflow: hidden; background: #070913; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff; }
@@ -17,7 +17,7 @@
     .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #00e5ff, #7000ff); width: 100%; transition: width 0.2s ease; }
     
     /* Buff Bar */
-    #buff-bar { display: flex; gap: 6px; margin-top: 4px; }
+    #buff-bar { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; max-width: 200px; }
     .buff-badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; background: rgba(0, 229, 255, 0.2); border: 1px solid #00e5ff; color: #00e5ff; font-weight: bold; }
     
     /* Floating Notifications */
@@ -54,6 +54,7 @@
       <div style="font-size: 0.8rem; color: #bbb; margin-top:2px;">Electronegativity ($\chi$): <span id="elem-en" style="color:#ffea00; font-weight:bold;">2.20</span></div>
       <div class="stat-bar-bg"><div id="hp-bar" class="stat-bar-fill"></div></div>
       <div style="font-size: 0.75rem; margin-top: 2px; color: #888;">Valence Electrons: <span id="val-count">1/2</span></div>
+      <div style="font-size: 0.75rem; margin-top: 2px; color: #00e5ff;">Bonded Orbiters: <span id="orbit-count">0</span></div>
       <div id="buff-bar"></div>
     </div>
   </div>
@@ -63,7 +64,7 @@
 
   <!-- Control Buttons -->
   <div id="controls-container">
-    <button class="btn" id="btn-bond">BOND / STEAL (Space)</button>
+    <button class="btn" id="btn-bond">BOND / ATTACH (Space)</button>
     <button class="btn" id="btn-upgrades">UPGRADES (U)</button>
   </div>
 
@@ -96,7 +97,7 @@
   </div>
 
 <script>
-// --- PERIODIC TABLE DATA & ELECTRONEGATIVITY ---
+// PERIODIC TABLE DATA & ELECTRONEGATIVITY
 const ELEMENTS = [
   { z: 1, sym: 'H', name: 'Hydrogen', maxVal: 2, type: 'nonmetal', en: 2.20, color: '#ffffff' },
   { z: 2, sym: 'He', name: 'Helium', maxVal: 2, type: 'noble', en: 0.00, color: '#d9ffff' },
@@ -122,8 +123,9 @@ window.addEventListener('resize', resize);
 resize();
 
 // Game State
+let mapSize = 2400;
 let player = {
-  x: 0, y: 0, vx: 0, vy: 0,
+  x: mapSize / 2, y: mapSize / 2,
   elemIdx: 0,
   valElectrons: 1,
   hp: 100, maxHp: 100,
@@ -133,14 +135,11 @@ let player = {
   upgradePts: 0,
   lastBondTime: 0,
   bondCooldown: 5000,
-  activeBuffs: [], // { name, type, endTime }
-  bondedTarget: null
+  activeBuffs: [],
+  bondedOrbiters: [] // Array of { elemIdx, angle, distance }
 };
 
-let mapSize = 2400;
-player.x = mapSize / 2;
-player.y = mapSize / 2;
-
+let orbitAngleGlobal = 0;
 let electrons = [];
 let cpus = [];
 let hazards = [];
@@ -207,31 +206,28 @@ for (let i = 0; i < 180; i++) {
   electrons.push({ x: Math.random() * mapSize, y: Math.random() * mapSize });
 }
 
-for (let i = 0; i < 25; i++) {
+function spawnCPU() {
   let eIdx = Math.floor(Math.random() * ELEMENTS.length);
-  cpus.push({
+  return {
     x: Math.random() * mapSize,
     y: Math.random() * mapSize,
     elemIdx: eIdx,
-    hp: 100,
-    vx: (Math.random() - 0.5) * 2,
-    vy: (Math.random() - 0.5) * 2
-  });
+    hp: 100
+  };
 }
+
+for (let i = 0; i < 30; i++) cpus.push(spawnCPU());
 
 for (let i = 0; i < 15; i++) {
   hazards.push({
     x: Math.random() * mapSize,
     y: Math.random() * mapSize,
     type: Math.random() > 0.5 ? 'OH-' : 'OH+',
-    detectRadius: 180,
-    chasing: false,
-    vx: (Math.random() - 0.5) * 2,
-    vy: (Math.random() - 0.5) * 2
+    detectRadius: 180
   });
 }
 
-// --- BONDING MECHANIC & BUFFS ---
+// BONDING MECHANIC & ORBIT ATTACHMENT
 function attemptBonding() {
   let now = Date.now();
   if (now - player.lastBondTime < player.bondCooldown) {
@@ -241,49 +237,54 @@ function attemptBonding() {
   }
 
   let curElem = ELEMENTS[player.elemIdx];
-  let closest = null;
+  let closestIdx = -1;
   let minDist = player.bondRange;
 
   // Search for closest atom inside range
-  for (let cpu of cpus) {
+  for (let i = 0; i < cpus.length; i++) {
+    let cpu = cpus[i];
     let d = Math.hypot(cpu.x - player.x, cpu.y - player.y);
     if (d < minDist) {
       minDist = d;
-      closest = cpu;
+      closestIdx = i;
     }
   }
 
-  if (!closest) {
+  if (closestIdx === -1) {
     showNotif("No Target Atom Nearby!");
     return;
   }
 
-  let targetElem = ELEMENTS[closest.elemIdx];
+  let targetCpu = cpus[closestIdx];
+  let targetElem = ELEMENTS[targetCpu.elemIdx];
 
   // ELECTRONEGATIVITY CHECK
   if (targetElem.en > curElem.en) {
-    showNotif(`Bond Failed! Target Electronegativity (${targetElem.en}) > Yours (${curElem.en})`);
+    showNotif(`Bond Failed! Target EN (${targetElem.en}) > Yours (${curElem.en})`);
     return;
   }
 
-  // Success! Form bond & trigger buff
+  // Success! Remove from wild and attach as Orbiting Atom
   player.lastBondTime = now;
-  player.bondedTarget = closest;
+  cpus.splice(closestIdx, 1); // Remove from world
+  cpus.push(spawnCPU()); // Respawn a new one in the distance
 
-  // Determine Bond Type and Buff
+  player.bondedOrbiters.push({
+    elemIdx: targetCpu.elemIdx,
+    distance: 65
+  });
+
+  // Determine Bond Type Buff
   if (curElem.type === 'metal' && targetElem.type === 'nonmetal') {
-    // Ionic Bond Buff: Burst Speed & Steal
-    addBuff('Ionic Speed Boost', 'speed', 8000);
+    addBuff('Ionic Speed', 'speed', 8000);
     player.valElectrons++;
-    showNotif(`Ionic Bond Formed! Steal Success + Speed Buff!`, true);
+    showNotif(`Ionic Bond! Atom Bound to Orbit + Speed Buff!`, true);
   } else if (curElem.type === 'nonmetal' && targetElem.type === 'nonmetal') {
-    // Covalent Bond Buff: Damage Shield
-    addBuff('Covalent Shared Shield', 'shield', 10000);
-    showNotif(`Covalent Bond Formed! 60% Shield Active!`, true);
+    addBuff('Covalent Shield', 'shield', 10000);
+    showNotif(`Covalent Bond! Atom Bound to Orbit + Shield Buff!`, true);
   } else {
-    // Metallic / Standard Bond Buff: Repulsion Wave
-    addBuff('Metallic Pulse Field', 'repel', 8000);
-    showNotif(`Metallic Bond Formed! Hazard Repulsion Active!`, true);
+    addBuff('Metallic Field', 'repel', 8000);
+    showNotif(`Metallic Bond! Atom Bound to Orbit + Repulsion Buff!`, true);
   }
 
   checkEvolution();
@@ -307,7 +308,7 @@ function checkEvolution() {
       player.elemIdx++;
       player.valElectrons = 1;
       player.upgradePts += 2;
-      showNotif(`EVOLVED into ${ELEMENTS[player.elemIdx].name}! (+2 Upgrade Pts)`, true);
+      showNotif(`EVOLVED into ${ELEMENTS[player.elemIdx].name}! (+2 Pts)`, true);
     }
   }
 }
@@ -322,11 +323,14 @@ function buyUpgrade(type) {
   showNotif("Upgrade Applied!", true);
 }
 
-// --- GAME LOOP ---
+// GAME LOOP
 function update() {
   let curElem = ELEMENTS[player.elemIdx];
   let curSpeed = player.speed;
   if (hasBuff('speed')) curSpeed *= 1.5;
+
+  // Rotation speed of orbiters
+  orbitAngleGlobal += 0.03;
 
   // Player Movement
   let moveX = 0, moveY = 0;
@@ -367,7 +371,6 @@ function update() {
   for (let h of hazards) {
     let d = Math.hypot(player.x - h.x, player.y - h.y);
     if (hasBuff('repel') && d < 220) {
-      // Repel hazards away
       h.x -= (player.x - h.x) * 0.08;
       h.y -= (player.y - h.y) * 0.08;
     } else if (d < h.detectRadius) {
@@ -375,7 +378,7 @@ function update() {
       h.y += (player.y - h.y) * 0.02;
       if (d < 25) {
         let dmg = 0.5;
-        if (hasBuff('shield')) dmg *= 0.4; // Covalent shield buff reduces damage
+        if (hasBuff('shield')) dmg *= 0.4;
         player.hp -= dmg;
       }
     }
@@ -390,6 +393,7 @@ function update() {
   document.getElementById('elem-name').innerText = curElem.name;
   document.getElementById('elem-en').innerText = curElem.en.toFixed(2);
   document.getElementById('val-count').innerText = `${player.valElectrons}/${curElem.maxVal}`;
+  document.getElementById('orbit-count').innerText = player.bondedOrbiters.length;
   document.getElementById('hp-bar').style.width = Math.max(0, player.hp) + '%';
   document.getElementById('pts-count').innerText = player.upgradePts;
 
@@ -448,20 +452,51 @@ function render() {
     ctx.fillText(h.type, h.x, h.y + 3);
   }
 
-  // Render Bonding Line & Target Range
-  ctx.strokeStyle = 'rgba(0, 229, 255, 0.2)';
+  // Render Bonding Reach Ring
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.15)';
+  ctx.lineWidth = 1;
   ctx.beginPath(); ctx.arc(player.x, player.y, player.bondRange, 0, Math.PI * 2); ctx.stroke();
 
-  if (player.bondedTarget && Date.now() - player.lastBondTime < 2000) {
-    ctx.strokeStyle = '#00e5ff';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y);
-    ctx.lineTo(player.bondedTarget.x, player.bondedTarget.y);
-    ctx.stroke();
+  // RENDER ORBITING BONDED ATOMS
+  let orbCount = player.bondedOrbiters.length;
+  if (orbCount > 0) {
+    // Draw Orbital Shell Guide Line
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.arc(player.x, player.y, 65, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    for (let i = 0; i < orbCount; i++) {
+      let orb = player.bondedOrbiters[i];
+      let angle = orbitAngleGlobal + (i * (Math.PI * 2 / orbCount));
+      let ox = player.x + Math.cos(angle) * orb.distance;
+      let oy = player.y + Math.sin(angle) * orb.distance;
+
+      let orbElem = ELEMENTS[orb.elemIdx];
+
+      // Draw Chemical Bond Connection Line
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(player.x, player.y);
+      ctx.lineTo(ox, oy);
+      ctx.stroke();
+
+      // Draw Orbiting Atom Body
+      ctx.fillStyle = orbElem.color;
+      ctx.shadowColor = orbElem.color;
+      ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(ox, oy, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Label Orbiting Atom
+      ctx.fillStyle = '#000'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(orbElem.sym, ox, oy + 3);
+    }
   }
 
-  // Render Player
+  // Render Player Core
   let curElem = ELEMENTS[player.elemIdx];
   ctx.fillStyle = curElem.color;
   ctx.shadowColor = curElem.color;
