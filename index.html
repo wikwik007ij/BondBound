@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>BondBound: Orbital Warfare</title>
+  <title>BondBound: Orbital Warfare Fixed</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body, html { width: 100%; height: 100%; overflow: hidden; background: #05070e; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
@@ -14,7 +14,7 @@
     .hud-card { background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,229,255,0.15); min-width: 220px; }
     .element-title { font-size: 1.6rem; font-weight: 800; color: #00e5ff; display: flex; align-items: center; justify-content: space-between; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
     .stat-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; margin-top: 6px; border: 1px solid rgba(0,229,255,0.2); }
-    .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #00e5ff, #7000ff); width: 100%; transition: width 0.15s ease; box-shadow: 0 0 8px #00e5ff; }
+    .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #ff1744, #00e5ff); width: 100%; transition: width 0.15s ease; box-shadow: 0 0 8px #00e5ff; }
     
     /* Buff Bar */
     #buff-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
@@ -37,10 +37,10 @@
     #joystick-knob { position: absolute; top: 40px; left: 40px; width: 50px; height: 50px; background: rgba(0,229,255,0.6); border-radius: 50%; border: 2px solid #00e5ff; pointer-events: none; box-shadow: 0 0 12px #00e5ff; }
     
     /* Modal Menus */
-    .modal { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 7, 14, 0.85); z-index: 20; display: none; justify-content: center; align-items: center; backdrop-filter: blur(6px); }
-    .modal-content { background: #0a0f24; border: 1px solid #00e5ff; border-radius: 16px; padding: 28px; max-width: 460px; width: 90%; color: #fff; box-shadow: 0 0 40px rgba(0,229,255,0.25); }
-    .modal-title { font-size: 1.6rem; color: #00e5ff; margin-bottom: 16px; text-align: center; font-weight: 800; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
-    .upgrade-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(0,229,255,0.1); border-radius: 8px; }
+    .modal { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 7, 14, 0.88); z-index: 20; display: none; justify-content: center; align-items: center; backdrop-filter: blur(6px); }
+    .modal-content { background: #0a0f24; border: 1px solid #00e5ff; border-radius: 16px; padding: 28px; max-width: 460px; width: 90%; color: #fff; box-shadow: 0 0 40px rgba(0,229,255,0.25); text-align: center; }
+    .modal-title { font-size: 1.8rem; color: #00e5ff; margin-bottom: 16px; font-weight: 800; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+    .upgrade-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(0,229,255,0.1); border-radius: 8px; text-align: left; }
   </style>
 </head>
 <body>
@@ -76,7 +76,7 @@
   <div class="modal" id="modal-upgrades">
     <div class="modal-content">
       <div class="modal-title">Atomic Evolution</div>
-      <div style="text-align: center; font-size: 0.95rem; color: #a0b5d0; margin-bottom: 16px;">Evolution Points: <span id="pts-count" style="color:#00e5ff; font-weight:bold;">0</span></div>
+      <div style="font-size: 0.95rem; color: #a0b5d0; margin-bottom: 16px;">Evolution Points: <span id="pts-count" style="color:#00e5ff; font-weight:bold;">0</span></div>
       
       <div class="upgrade-row">
         <div><strong>Magnetic Pull</strong><br><small style="color:#6680a0">Collection reach</small></div>
@@ -91,9 +91,18 @@
         <button class="btn" onclick="buyUpgrade('range')" tabindex="-1">Upgrade (+30)</button>
       </div>
       
-      <div style="text-align: center; margin-top: 20px;">
+      <div style="margin-top: 20px;">
         <button class="btn" onclick="toggleModal('modal-upgrades')" tabindex="-1">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div class="modal" id="modal-gameover" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-title" style="color:#ff1744; text-shadow: 0 0 10px rgba(255,23,68,0.5);">Atom Decomposed!</div>
+      <p style="color:#a0b5d0; margin-bottom: 20px;">Your element was destroyed by radical ions.</p>
+      <button class="btn" onclick="restartGame()" tabindex="-1">Re-Synthesize (Restart)</button>
     </div>
   </div>
 
@@ -123,34 +132,65 @@ function resize() { canvas.width = window.innerWidth; canvas.height = window.inn
 window.addEventListener('resize', resize);
 resize();
 
-// Game State
+// Game Variables
 let mapSize = 2600;
-let player = {
-  x: mapSize / 2, y: mapSize / 2,
-  vx: 0, vy: 0,
-  elemIdx: 0,
-  valElectrons: 1,
-  hp: 100, maxHp: 100,
-  speed: 4.5,
-  pullRadius: 110,
-  bondRange: 170,
-  upgradePts: 0,
-  lastBondTime: 0,
-  bondCooldown: 3000,
-  activeBuffs: [],
-  bondedOrbiters: [] // Array of { elemIdx }
-};
-
+let player, electrons, cpus, hazards, particles, shockwaves, keys, isGameOver;
 let orbitAngleGlobal = 0;
-let electrons = [];
-let cpus = [];
-let hazards = [];
-let particles = [];
-let shockwaves = [];
-let keys = {};
+let lastHitTime = 0;
+
+function initGame() {
+  isGameOver = false;
+  player = {
+    x: mapSize / 2, y: mapSize / 2,
+    vx: 0, vy: 0,
+    elemIdx: 0,
+    valElectrons: 1,
+    hp: 100, maxHp: 100,
+    speed: 4.5,
+    pullRadius: 110,
+    bondRange: 170,
+    upgradePts: 0,
+    lastBondTime: 0,
+    activeBuffs: [],
+    bondedOrbiters: []
+  };
+
+  electrons = [];
+  cpus = [];
+  hazards = [];
+  particles = [];
+  shockwaves = [];
+  keys = {};
+
+  for (let i = 0; i < 200; i++) {
+    electrons.push({ x: Math.random() * mapSize, y: Math.random() * mapSize });
+  }
+
+  for (let i = 0; i < 35; i++) cpus.push(spawnCPU());
+
+  for (let i = 0; i < 18; i++) {
+    hazards.push({
+      x: Math.random() * mapSize,
+      y: Math.random() * mapSize,
+      type: Math.random() > 0.5 ? 'OH-' : 'OH+',
+      detectRadius: 200
+    });
+  }
+
+  document.getElementById('modal-gameover').style.display = 'none';
+}
+
+function spawnCPU() {
+  return {
+    x: Math.random() * mapSize,
+    y: Math.random() * mapSize,
+    elemIdx: Math.floor(Math.random() * ELEMENTS.length)
+  };
+}
 
 // FIX MOVEMENT FOCUS ISSUES
 window.addEventListener('keydown', e => {
+  if (isGameOver) return;
   let k = e.key.toLowerCase();
   keys[k] = true;
   if (e.code === 'Space') { e.preventDefault(); attemptBonding(); }
@@ -161,7 +201,6 @@ window.addEventListener('keyup', e => {
   keys[e.key.toLowerCase()] = false;
 });
 
-// Ensure Canvas/Window Retains Keyboard Focus
 window.addEventListener('click', () => window.focus());
 
 // Touch Joystick
@@ -229,35 +268,16 @@ function createBurst(x, y, color, count = 12) {
   }
 }
 
-// Spawning Objects
-for (let i = 0; i < 200; i++) {
-  electrons.push({ x: Math.random() * mapSize, y: Math.random() * mapSize });
-}
-
-function spawnCPU() {
-  return {
-    x: Math.random() * mapSize,
-    y: Math.random() * mapSize,
-    elemIdx: Math.floor(Math.random() * ELEMENTS.length)
-  };
-}
-for (let i = 0; i < 35; i++) cpus.push(spawnCPU());
-
-for (let i = 0; i < 18; i++) {
-  hazards.push({
-    x: Math.random() * mapSize,
-    y: Math.random() * mapSize,
-    type: Math.random() > 0.5 ? 'OH-' : 'OH+',
-    detectRadius: 200
-  });
+function restartGame() {
+  initGame();
 }
 
 // BONDING & ORBITAL PULSE
 function attemptBonding() {
+  if (isGameOver) return;
   let now = Date.now();
   let curElem = ELEMENTS[player.elemIdx];
 
-  // Try finding closest CPU
   let closestIdx = -1;
   let minDist = player.bondRange;
 
@@ -276,36 +296,37 @@ function attemptBonding() {
       return;
     }
 
-    // Attach as Orbiter
+    // Attach target CPU to orbit list!
+    player.bondedOrbiters.push({ elemIdx: targetCpu.elemIdx });
+    
+    // Remove bonded CPU and spawn a new one elsewhere
     cpus.splice(closestIdx, 1);
     cpus.push(spawnCPU());
 
-    player.bondedOrbiters.push({ elemIdx: targetCpu.elemIdx });
-    createBurst(targetCpu.x, targetCpu.y, targetElem.color, 20);
+    createBurst(player.x, player.y, targetElem.color, 20);
 
     if (curElem.type === 'metal' && targetElem.type === 'nonmetal') {
       addBuff('Ionic Surge', 'speed', 8000);
       player.valElectrons++;
-      showNotif(`Ionic Bond! Orbiting Atom Bound + Speed Surge!`, true);
+      showNotif(`Ionic Bond! ${targetElem.sym} bound into Orbit!`, true);
     } else if (curElem.type === 'nonmetal' && targetElem.type === 'nonmetal') {
       addBuff('Covalent Shield', 'shield', 10000);
-      showNotif(`Covalent Bond! Orbiting Atom Bound + Shield Buff!`, true);
+      showNotif(`Covalent Bond! ${targetElem.sym} bound into Orbit!`, true);
     } else {
       addBuff('Metallic Pulse', 'repel', 8000);
-      showNotif(`Metallic Bond! Orbiting Atom Bound + Repulsion Field!`, true);
+      showNotif(`Metallic Bond! ${targetElem.sym} bound into Orbit!`, true);
     }
 
     checkEvolution();
     return;
   }
 
-  // If no atom to bond, trigger Orbital Shockwave Pulse
+  // Shockwave Pulse when no atom is near
   if (player.bondedOrbiters.length > 0) {
     if (now - player.lastBondTime < 1500) return;
     player.lastBondTime = now;
     shockwaves.push({ x: player.x, y: player.y, radius: 10, maxRadius: 180 + (player.bondedOrbiters.length * 20), color: curElem.color });
     
-    // Push away hazards
     for (let h of hazards) {
       let d = Math.hypot(h.x - player.x, h.y - player.y);
       if (d < 220) {
@@ -354,13 +375,15 @@ function buyUpgrade(type) {
 
 // GAME LOOP
 function update() {
+  if (isGameOver) return;
+
   let curElem = ELEMENTS[player.elemIdx];
   let curSpeed = player.speed;
   if (hasBuff('speed')) curSpeed *= 1.4;
 
-  orbitAngleGlobal += 0.025;
+  orbitAngleGlobal += 0.03;
 
-  // DIRECTIONAL INPUT (WASD / Arrows / Joystick)
+  // WASD / Arrow / Touch Controls
   let dx = 0, dy = 0;
   if (keys['a'] || keys['arrowleft']) dx -= 1;
   if (keys['d'] || keys['arrowright']) dx += 1;
@@ -375,13 +398,11 @@ function update() {
     player.vy += (dy / (mag > 1 ? mag : 1)) * curSpeed * 0.25;
   }
 
-  // Smooth Movement Dampening
   player.x += player.vx;
   player.y += player.vy;
   player.vx *= 0.82;
   player.vy *= 0.82;
 
-  // Map Bounds
   player.x = Math.max(40, Math.min(mapSize - 40, player.x));
   player.y = Math.max(40, Math.min(mapSize - 40, player.y));
 
@@ -417,7 +438,8 @@ function update() {
     if (p.life <= 0) particles.splice(i, 1);
   }
 
-  // Hazards AI
+  // Hazards AI & BALANCED DAMAGE SYSTEM
+  let now = Date.now();
   for (let h of hazards) {
     let d = Math.hypot(player.x - h.x, player.y - h.y);
     if (hasBuff('repel') && d < 220) {
@@ -426,16 +448,31 @@ function update() {
     } else if (d < h.detectRadius) {
       h.x += (player.x - h.x) * 0.025;
       h.y += (player.y - h.y) * 0.025;
-      if (d < 24) {
-        let dmg = 0.6;
+      
+      // Hit detection with Cooldown to prevent instant spam death
+      if (d < 26 && now - lastHitTime > 500) {
+        lastHitTime = now;
+        let dmg = 18;
         if (hasBuff('shield')) dmg *= 0.3;
         player.hp -= dmg;
+        createBurst(player.x, player.y, '#ff1744', 15);
+
+        // Knock back hazard slightly
+        let ang = Math.atan2(h.y - player.y, h.x - player.x);
+        h.x += Math.cos(ang) * 60;
+        h.y += Math.sin(ang) * 60;
+
+        // CHECK DEATH CONDITION
+        if (player.hp <= 0) {
+          player.hp = 0;
+          isGameOver = true;
+          document.getElementById('modal-gameover').style.display = 'flex';
+        }
       }
     }
   }
 
   // Update Buffs
-  let now = Date.now();
   player.activeBuffs = player.activeBuffs.filter(b => b.endTime > now);
 
   // Update HUD
@@ -444,7 +481,7 @@ function update() {
   document.getElementById('elem-en').innerText = curElem.en.toFixed(2);
   document.getElementById('val-count').innerText = `${player.valElectrons}/${curElem.maxVal}`;
   document.getElementById('orbit-count').innerText = player.bondedOrbiters.length;
-  document.getElementById('hp-bar').style.width = Math.max(0, player.hp) + '%';
+  document.getElementById('hp-bar').style.width = Math.max(0, (player.hp / player.maxHp) * 100) + '%';
   document.getElementById('pts-count').innerText = player.upgradePts;
 
   let buffBar = document.getElementById('buff-bar');
@@ -531,20 +568,18 @@ function render() {
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(player.x, player.y, player.bondRange, 0, Math.PI * 2); ctx.stroke();
 
-  // MULTI-SHELL ORBITING BONDED ATOMS
+  // RENDER GUARANTEED ORBITING BONDED ATOMS
   let orbCount = player.bondedOrbiters.length;
   if (orbCount > 0) {
-    let shells = [];
-    if (orbCount <= 2) shells = [orbCount];
-    else shells = [2, orbCount - 2]; // Shell 1 holds 2, Shell 2 holds rest
-
+    let shells = orbCount <= 2 ? [orbCount] : [2, orbCount - 2];
     let orbIdx = 0;
+
     for (let s = 0; s < shells.length; s++) {
       let countInShell = shells[s];
       let dist = 65 + (s * 35);
 
-      // Draw Orbit Line
-      ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)';
+      // Orbital Path Ring
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([5, 5]);
       ctx.beginPath(); ctx.arc(player.x, player.y, dist, 0, Math.PI * 2); ctx.stroke();
@@ -552,6 +587,8 @@ function render() {
 
       for (let i = 0; i < countInShell; i++) {
         let orb = player.bondedOrbiters[orbIdx++];
+        if (!orb) continue;
+
         let angle = (s % 2 === 0 ? orbitAngleGlobal : -orbitAngleGlobal) + (i * (Math.PI * 2 / countInShell));
         let ox = player.x + Math.cos(angle) * dist;
         let oy = player.y + Math.sin(angle) * dist;
@@ -559,11 +596,11 @@ function render() {
         let orbElem = ELEMENTS[orb.elemIdx];
 
         // Draw Energy Link Beam
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.5)';
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.6)';
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(ox, oy); ctx.stroke();
 
-        // Orbiting Atom Body
+        // Orbiting Atom Node
         ctx.fillStyle = orbElem.color;
         ctx.shadowColor = orbElem.color;
         ctx.shadowBlur = 12;
@@ -596,6 +633,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+initGame();
 gameLoop();
 </script>
 </body>
