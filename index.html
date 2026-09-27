@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>BondBound: Orbital Warfare Fixed</title>
+  <title>BondBound: วิวัฒนาการพันธะเคมีไร้ขีดจำกัด</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body, html { width: 100%; height: 100%; overflow: hidden; background: #05070e; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #05070e; font-family: 'Sarabun', 'Segoe UI', system-ui, sans-serif; color: #fff; }
     canvas { display: block; width: 100vw; height: 100vh; background: radial-gradient(circle at center, #0a0f24 0%, #030408 100%); }
     
     /* HUD Overlays */
     #hud { position: absolute; top: 16px; left: 16px; z-index: 10; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
-    .hud-card { background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,229,255,0.15); min-width: 220px; }
-    .element-title { font-size: 1.6rem; font-weight: 800; color: #00e5ff; display: flex; align-items: center; justify-content: space-between; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+    .hud-card { background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,229,255,0.15); min-width: 240px; }
+    .element-title { font-size: 1.5rem; font-weight: 800; color: #00e5ff; display: flex; align-items: center; justify-content: space-between; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
     .stat-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; margin-top: 6px; border: 1px solid rgba(0,229,255,0.2); }
     .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #ff1744, #00e5ff); width: 100%; transition: width 0.15s ease; box-shadow: 0 0 8px #00e5ff; }
     
@@ -22,7 +22,7 @@
     
     /* Dynamic Notifications */
     #notif-container { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    .notif { background: rgba(255, 23, 68, 0.9); color: #fff; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 0.95rem; animation: floatUp 1.8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; border: 1px solid #ff1744; box-shadow: 0 0 15px rgba(255,23,68,0.4); }
+    .notif { background: rgba(255, 23, 68, 0.9); color: #fff; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 0.95rem; animation: floatUp 1.8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; border: 1px solid #ff1744; box-shadow: 0 0 15px rgba(255,23,68,0.4); text-align: center; }
     .notif-success { background: rgba(0, 230, 118, 0.9); border-color: #00e676; color: #05070e; box-shadow: 0 0 15px rgba(0,230,118,0.4); }
     @keyframes floatUp { 0% { opacity: 0; transform: translateY(15px) scale(0.9); } 15% { opacity: 1; transform: translateY(0) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-25px) scale(0.95); } }
 
@@ -51,11 +51,11 @@
   <!-- HUD -->
   <div id="hud">
     <div class="hud-card">
-      <div class="element-title"><span id="elem-sym">H</span> <span id="elem-name" style="font-size: 1rem; color: #88a0c0; font-weight: 600;">Hydrogen</span></div>
-      <div style="font-size: 0.85rem; color: #a0b5d0; margin-top:4px;">Electronegativity ($\chi$): <span id="elem-en" style="color:#ffea00; font-weight:bold;">2.20</span></div>
+      <div class="element-title"><span id="elem-sym">H</span> <span id="elem-name" style="font-size: 1rem; color: #88a0c0; font-weight: 600;">ไฮโดรเจน</span></div>
+      <div style="font-size: 0.85rem; color: #a0b5d0; margin-top:4px;">ค่าอิเล็กโทรเนกาติวิตี (EN): <span id="elem-en" style="color:#ffea00; font-weight:bold;">2.20</span></div>
       <div class="stat-bar-bg"><div id="hp-bar" class="stat-bar-fill"></div></div>
-      <div style="font-size: 0.8rem; margin-top: 6px; color: #88a0c0;">Valence Electrons: <span id="val-count" style="color:#fff; font-weight:bold;">1/2</span></div>
-      <div style="font-size: 0.8rem; margin-top: 2px; color: #00e5ff;">Bonded Orbiters: <span id="orbit-count" style="font-weight:bold;">0</span></div>
+      <div style="font-size: 0.8rem; margin-top: 6px; color: #88a0c0;">เวเลนซ์อิเล็กตรอน: <span id="val-count" style="color:#fff; font-weight:bold;">1/2</span></div>
+      <div style="font-size: 0.8rem; margin-top: 2px; color: #00e5ff;">อะตอมในวงโคจร: <span id="orbit-count" style="font-weight:bold;">0</span></div>
       <div id="buff-bar"></div>
     </div>
   </div>
@@ -65,8 +65,8 @@
 
   <!-- Control Buttons -->
   <div id="controls-container">
-    <button class="btn" id="btn-bond" tabindex="-1">BOND / PULSE (Space)</button>
-    <button class="btn" id="btn-upgrades" tabindex="-1">UPGRADES (U)</button>
+    <button class="btn" id="btn-bond" tabindex="-1">สร้างพันธะ / คลื่นกระแทก (Space)</button>
+    <button class="btn" id="btn-upgrades" tabindex="-1">อัปเกรด (U)</button>
   </div>
 
   <!-- Touch Joystick -->
@@ -75,24 +75,24 @@
   <!-- Upgrades Modal -->
   <div class="modal" id="modal-upgrades">
     <div class="modal-content">
-      <div class="modal-title">Atomic Evolution</div>
-      <div style="font-size: 0.95rem; color: #a0b5d0; margin-bottom: 16px;">Evolution Points: <span id="pts-count" style="color:#00e5ff; font-weight:bold;">0</span></div>
+      <div class="modal-title">วิวัฒนาการทางอะตอม</div>
+      <div style="font-size: 0.95rem; color: #a0b5d0; margin-bottom: 16px;">แต้มวิวัฒนาการ: <span id="pts-count" style="color:#00e5ff; font-weight:bold;">0</span></div>
       
       <div class="upgrade-row">
-        <div><strong>Magnetic Pull</strong><br><small style="color:#6680a0">Collection reach</small></div>
-        <button class="btn" onclick="buyUpgrade('pull')" tabindex="-1">Upgrade (+30)</button>
+        <div><strong>แรงดึงดูดแม่เหล็ก</strong><br><small style="color:#6680a0">ระยะเก็บอิเล็กตรอน</small></div>
+        <button class="btn" onclick="buyUpgrade('pull')" tabindex="-1">อัปเกรด (+30)</button>
       </div>
       <div class="upgrade-row">
-        <div><strong>Atomic Velocity</strong><br><small style="color:#6680a0">Movement speed</small></div>
-        <button class="btn" onclick="buyUpgrade('speed')" tabindex="-1">Upgrade (+0.8)</button>
+        <div><strong>ความเร็วอะตอม</strong><br><small style="color:#6680a0">ความเร็วในการเคลื่อนที่</small></div>
+        <button class="btn" onclick="buyUpgrade('speed')" tabindex="-1">อัปเกรด (+0.8)</button>
       </div>
       <div class="upgrade-row">
-        <div><strong>Bond Radius</strong><br><small style="color:#6680a0">Attract & bond reach</small></div>
-        <button class="btn" onclick="buyUpgrade('range')" tabindex="-1">Upgrade (+30)</button>
+        <div><strong>ระยะพันธะ</strong><br><small style="color:#6680a0">รัศมีการดึงดูดและสร้างพันธะ</small></div>
+        <button class="btn" onclick="buyUpgrade('range')" tabindex="-1">อัปเกรด (+30)</button>
       </div>
       
       <div style="margin-top: 20px;">
-        <button class="btn" onclick="toggleModal('modal-upgrades')" tabindex="-1">Close</button>
+        <button class="btn" onclick="toggleModal('modal-upgrades')" tabindex="-1">ปิด</button>
       </div>
     </div>
   </div>
@@ -100,29 +100,29 @@
   <!-- Game Over Modal -->
   <div class="modal" id="modal-gameover" style="display:none;">
     <div class="modal-content">
-      <div class="modal-title" style="color:#ff1744; text-shadow: 0 0 10px rgba(255,23,68,0.5);">Atom Decomposed!</div>
-      <p style="color:#a0b5d0; margin-bottom: 20px;">Your element was destroyed by radical ions.</p>
-      <button class="btn" onclick="restartGame()" tabindex="-1">Re-Synthesize (Restart)</button>
+      <div class="modal-title" style="color:#ff1744; text-shadow: 0 0 10px rgba(255,23,68,0.5);">อะตอมสลายตัว!</div>
+      <p style="color:#a0b5d0; margin-bottom: 20px;">ธาตุของคุณถูกทำลายโดยอนุมูลอิสระ</p>
+      <button class="btn" onclick="restartGame()" tabindex="-1">สังเคราะห์ใหม่ (เริ่มใหม่)</button>
     </div>
   </div>
 
 <script>
-// PERIODIC TABLE DATA & ELECTRONEGATIVITY
+// PERIODIC TABLE DATA & ELECTRONEGATIVITY WITH THAI NAMES
 const ELEMENTS = [
-  { z: 1, sym: 'H', name: 'Hydrogen', maxVal: 2, type: 'nonmetal', en: 2.20, color: '#ffffff' },
-  { z: 2, sym: 'He', name: 'Helium', maxVal: 2, type: 'noble', en: 0.00, color: '#d9ffff' },
-  { z: 3, sym: 'Li', name: 'Lithium', maxVal: 8, type: 'metal', en: 0.98, color: '#cc80ff' },
-  { z: 4, sym: 'Be', name: 'Beryllium', maxVal: 8, type: 'metal', en: 1.57, color: '#c2ff00' },
-  { z: 5, sym: 'B', name: 'Boron', maxVal: 8, type: 'metalloid', en: 2.04, color: '#ffb366' },
-  { z: 6, sym: 'C', name: 'Carbon', maxVal: 8, type: 'nonmetal', en: 2.55, color: '#aaaaaa' },
-  { z: 7, sym: 'N', name: 'Nitrogen', maxVal: 8, type: 'nonmetal', en: 3.04, color: '#3399ff' },
-  { z: 8, sym: 'O', name: 'Oxygen', maxVal: 8, type: 'nonmetal', en: 3.44, color: '#ff3333' },
-  { z: 9, sym: 'F', name: 'Fluorine', maxVal: 8, type: 'nonmetal', en: 3.98, color: '#33ff99' },
-  { z: 10, sym: 'Ne', name: 'Neon', maxVal: 8, type: 'noble', en: 0.00, color: '#ff66cc' },
-  { z: 11, sym: 'Na', name: 'Sodium', maxVal: 8, type: 'metal', en: 0.93, color: '#ab5cf2' },
-  { z: 12, sym: 'Mg', name: 'Magnesium', maxVal: 8, type: 'metal', en: 1.31, color: '#8aff00' },
-  { z: 17, sym: 'Cl', name: 'Chlorine', maxVal: 8, type: 'nonmetal', en: 3.16, color: '#1ff073' },
-  { z: 18, sym: 'Ar', name: 'Argon', maxVal: 8, type: 'noble', en: 0.00, color: '#00e5ff' }
+  { z: 1, sym: 'H', name: 'ไฮโดรเจน', maxVal: 2, type: 'nonmetal', en: 2.20, color: '#ffffff' },
+  { z: 2, sym: 'He', name: 'ฮีเลียม', maxVal: 2, type: 'noble', en: 0.00, color: '#d9ffff' },
+  { z: 3, sym: 'Li', name: 'ลิเทียม', maxVal: 8, type: 'metal', en: 0.98, color: '#cc80ff' },
+  { z: 4, sym: 'Be', name: 'เบริลเลียม', maxVal: 8, type: 'metal', en: 1.57, color: '#c2ff00' },
+  { z: 5, sym: 'B', name: 'โบรอน', maxVal: 8, type: 'metalloid', en: 2.04, color: '#ffb366' },
+  { z: 6, sym: 'C', name: 'คาร์บอน', maxVal: 8, type: 'nonmetal', en: 2.55, color: '#aaaaaa' },
+  { z: 7, sym: 'N', name: 'ไนโตรเจน', maxVal: 8, type: 'nonmetal', en: 3.04, color: '#3399ff' },
+  { z: 8, sym: 'O', name: 'ออกซิเจน', maxVal: 8, type: 'nonmetal', en: 3.44, color: '#ff3333' },
+  { z: 9, sym: 'F', name: 'ฟลูออรีน', maxVal: 8, type: 'nonmetal', en: 3.98, color: '#33ff99' },
+  { z: 10, sym: 'Ne', name: 'นีออน', maxVal: 8, type: 'noble', en: 0.00, color: '#ff66cc' },
+  { z: 11, sym: 'Na', name: 'โซเดียม', maxVal: 8, type: 'metal', en: 0.93, color: '#ab5cf2' },
+  { z: 12, sym: 'Mg', name: 'แมกนีเซียม', maxVal: 8, type: 'metal', en: 1.31, color: '#8aff00' },
+  { z: 17, sym: 'Cl', name: 'คลอรีน', maxVal: 8, type: 'nonmetal', en: 3.16, color: '#1ff073' },
+  { z: 18, sym: 'Ar', name: 'อาร์กอน', maxVal: 8, type: 'noble', en: 0.00, color: '#00e5ff' }
 ];
 
 // Setup Canvas
@@ -188,7 +188,7 @@ function spawnCPU() {
   };
 }
 
-// FIX MOVEMENT FOCUS ISSUES
+// Keyboard Listeners
 window.addEventListener('keydown', e => {
   if (isGameOver) return;
   let k = e.key.toLowerCase();
@@ -272,7 +272,6 @@ function restartGame() {
   initGame();
 }
 
-// BONDING & ORBITAL PULSE
 function attemptBonding() {
   if (isGameOver) return;
   let now = Date.now();
@@ -292,11 +291,11 @@ function attemptBonding() {
     let targetElem = ELEMENTS[targetCpu.elemIdx];
 
     if (targetElem.en > curElem.en) {
-      showNotif(`Bond Failed! Target EN (${targetElem.en}) > Yours (${curElem.en})`);
+      showNotif(`สร้างพันธะล้มเหลว! EN เป้าหมาย (${targetElem.en}) > ของคุณ (${curElem.en})`);
       return;
     }
 
-    // Attach target CPU to orbit list!
+    // Attach target CPU to orbit list
     player.bondedOrbiters.push({ elemIdx: targetCpu.elemIdx });
     
     // Remove bonded CPU and spawn a new one elsewhere
@@ -306,15 +305,15 @@ function attemptBonding() {
     createBurst(player.x, player.y, targetElem.color, 20);
 
     if (curElem.type === 'metal' && targetElem.type === 'nonmetal') {
-      addBuff('Ionic Surge', 'speed', 8000);
+      addBuff('การพุ่งทะยานไอออนิก', 'speed', 8000);
       player.valElectrons++;
-      showNotif(`Ionic Bond! ${targetElem.sym} bound into Orbit!`, true);
+      showNotif(`พันธะไอออนิก! ดึง ${targetElem.sym} เข้าสู่วงโคจร!`, true);
     } else if (curElem.type === 'nonmetal' && targetElem.type === 'nonmetal') {
-      addBuff('Covalent Shield', 'shield', 10000);
-      showNotif(`Covalent Bond! ${targetElem.sym} bound into Orbit!`, true);
+      addBuff('เกราะโควาเลนต์', 'shield', 10000);
+      showNotif(`พันธะโควาเลนต์! ดึง ${targetElem.sym} เข้าสู่วงโคจร!`, true);
     } else {
-      addBuff('Metallic Pulse', 'repel', 8000);
-      showNotif(`Metallic Bond! ${targetElem.sym} bound into Orbit!`, true);
+      addBuff('คลื่นพัลส์โลหะ', 'repel', 8000);
+      showNotif(`พันธะโลหะ! ดึง ${targetElem.sym} เข้าสู่วงโคจร!`, true);
     }
 
     checkEvolution();
@@ -335,9 +334,9 @@ function attemptBonding() {
         h.y += Math.sin(ang) * 120;
       }
     }
-    showNotif("Orbital Shockwave Released!", true);
+    showNotif("ปลดปล่อยคลื่นกระแทกวงโคจร!", true);
   } else {
-    showNotif("No Target Atom Nearby!");
+    showNotif("ไม่มีเป้าหมายอะตอมในระยะ!");
   }
 }
 
@@ -359,21 +358,20 @@ function checkEvolution() {
       player.valElectrons = 1;
       player.upgradePts += 2;
       createBurst(player.x, player.y, '#00e5ff', 30);
-      showNotif(`EVOLVED into ${ELEMENTS[player.elemIdx].name}! (+2 Pts)`, true);
+      showNotif(`วิวัฒนาการเป็น ${ELEMENTS[player.elemIdx].name}! (+2 แต้ม)`, true);
     }
   }
 }
 
 function buyUpgrade(type) {
-  if (player.upgradePts < 1) { showNotif("Not enough Evolution Points!"); return; }
+  if (player.upgradePts < 1) { showNotif("แต้มวิวัฒนาการไม่เพียงพอ!"); return; }
   if (type === 'pull') player.pullRadius += 30;
   if (type === 'speed') player.speed += 0.8;
   if (type === 'range') player.bondRange += 30;
   player.upgradePts--;
-  showNotif("Upgrade Applied!", true);
+  showNotif("อัปเกรดเรียบร้อย!", true);
 }
 
-// GAME LOOP
 function update() {
   if (isGameOver) return;
 
@@ -449,7 +447,7 @@ function update() {
       h.x += (player.x - h.x) * 0.025;
       h.y += (player.y - h.y) * 0.025;
       
-      // Hit detection with Cooldown to prevent instant spam death
+      // Hit detection with Cooldown
       if (d < 26 && now - lastHitTime > 500) {
         lastHitTime = now;
         let dmg = 18;
@@ -475,7 +473,7 @@ function update() {
   // Update Buffs
   player.activeBuffs = player.activeBuffs.filter(b => b.endTime > now);
 
-  // Update HUD
+  // Update HUD Text with Thai Localizations
   document.getElementById('elem-sym').innerText = curElem.sym;
   document.getElementById('elem-name').innerText = curElem.name;
   document.getElementById('elem-en').innerText = curElem.en.toFixed(2);
@@ -489,7 +487,7 @@ function update() {
   for (let b of player.activeBuffs) {
     let badge = document.createElement('div');
     badge.className = 'buff-badge';
-    badge.innerText = `${b.name} (${Math.ceil((b.endTime - now) / 1000)}s)`;
+    badge.innerText = `${b.name} (${Math.ceil((b.endTime - now) / 1000)}วิ)`;
     buffBar.appendChild(badge);
   }
 }
