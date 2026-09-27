@@ -3,43 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>BondBound: Orbital Chemical Bonding</title>
+  <title>BondBound: Orbital Warfare</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body, html { width: 100%; height: 100%; overflow: hidden; background: #070913; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff; }
-    canvas { display: block; width: 100vw; height: 100vh; }
+    body, html { width: 100%; height: 100%; overflow: hidden; background: #05070e; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
+    canvas { display: block; width: 100vw; height: 100vh; background: radial-gradient(circle at center, #0a0f24 0%, #030408 100%); }
     
     /* HUD Overlays */
-    #hud { position: absolute; top: 12px; left: 12px; z-index: 10; pointer-events: none; display: flex; flex-direction: column; gap: 8px; }
-    .hud-card { background: rgba(13, 17, 38, 0.85); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 8px; padding: 10px 14px; backdrop-filter: blur(6px); box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-    .element-title { font-size: 1.4rem; font-weight: bold; color: #00e5ff; display: flex; align-items: center; gap: 8px; }
-    .stat-bar-bg { width: 180px; height: 10px; background: #1a2238; border-radius: 5px; overflow: hidden; margin-top: 4px; border: 1px solid #00e5ff44; }
-    .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #00e5ff, #7000ff); width: 100%; transition: width 0.2s ease; }
+    #hud { position: absolute; top: 16px; left: 16px; z-index: 10; pointer-events: none; display: flex; flex-direction: column; gap: 10px; }
+    .hud-card { background: rgba(10, 15, 30, 0.85); border: 1px solid rgba(0, 229, 255, 0.4); border-radius: 12px; padding: 14px 18px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0,229,255,0.15); min-width: 220px; }
+    .element-title { font-size: 1.6rem; font-weight: 800; color: #00e5ff; display: flex; align-items: center; justify-content: space-between; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+    .stat-bar-bg { width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; margin-top: 6px; border: 1px solid rgba(0,229,255,0.2); }
+    .stat-bar-fill { height: 100%; background: linear-gradient(90deg, #00e5ff, #7000ff); width: 100%; transition: width 0.15s ease; box-shadow: 0 0 8px #00e5ff; }
     
     /* Buff Bar */
-    #buff-bar { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; max-width: 200px; }
-    .buff-badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; background: rgba(0, 229, 255, 0.2); border: 1px solid #00e5ff; color: #00e5ff; font-weight: bold; }
+    #buff-bar { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .buff-badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; background: rgba(0, 229, 255, 0.15); border: 1px solid #00e5ff; color: #00e5ff; font-weight: 700; text-shadow: 0 0 4px #00e5ff; }
     
-    /* Floating Notifications */
-    #notif-container { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .notif { background: rgba(255, 30, 86, 0.9); color: #fff; font-weight: bold; padding: 6px 16px; border-radius: 20px; font-size: 0.9rem; animation: floatUp 2s forwards; border: 1px solid #ff5252; }
-    .notif-success { background: rgba(0, 230, 118, 0.9); border-color: #69f0ae; color: #000; }
-    @keyframes floatUp { 0% { opacity: 0; transform: translateY(10px); } 15% { opacity: 1; transform: translateY(0); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-20px); } }
+    /* Dynamic Notifications */
+    #notif-container { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .notif { background: rgba(255, 23, 68, 0.9); color: #fff; font-weight: 700; padding: 8px 20px; border-radius: 20px; font-size: 0.95rem; animation: floatUp 1.8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; border: 1px solid #ff1744; box-shadow: 0 0 15px rgba(255,23,68,0.4); }
+    .notif-success { background: rgba(0, 230, 118, 0.9); border-color: #00e676; color: #05070e; box-shadow: 0 0 15px rgba(0,230,118,0.4); }
+    @keyframes floatUp { 0% { opacity: 0; transform: translateY(15px) scale(0.9); } 15% { opacity: 1; transform: translateY(0) scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: translateY(-25px) scale(0.95); } }
 
-    /* Controls Overlay */
-    #controls-container { position: absolute; bottom: 16px; right: 16px; z-index: 10; display: flex; gap: 10px; }
-    .btn { background: rgba(13, 17, 38, 0.85); border: 1px solid #00e5ff; color: #00e5ff; font-weight: bold; padding: 12px 18px; border-radius: 10px; cursor: pointer; backdrop-filter: blur(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-size: 0.9rem; transition: all 0.1s; }
-    .btn:active { transform: scale(0.95); background: rgba(0, 229, 255, 0.3); }
+    /* Control Buttons */
+    #controls-container { position: absolute; bottom: 20px; right: 20px; z-index: 10; display: flex; gap: 12px; }
+    .btn { background: rgba(10, 15, 30, 0.85); border: 1px solid #00e5ff; color: #00e5ff; font-weight: 700; padding: 14px 22px; border-radius: 12px; cursor: pointer; backdrop-filter: blur(8px); box-shadow: 0 4px 20px rgba(0,229,255,0.2); font-size: 0.95rem; transition: all 0.15s; outline: none; }
+    .btn:hover { background: rgba(0, 229, 255, 0.2); transform: translateY(-2px); }
+    .btn:active { transform: translateY(1px); }
     
     /* Touch Controls */
-    #joystick-zone { position: absolute; bottom: 20px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border: 2px dashed rgba(0,229,255,0.3); border-radius: 50%; z-index: 10; touch-action: none; }
-    #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(0,229,255,0.5); border-radius: 50%; border: 2px solid #00e5ff; pointer-events: none; }
+    #joystick-zone { position: absolute; bottom: 24px; left: 24px; width: 130px; height: 130px; background: rgba(255,255,255,0.03); border: 2px dashed rgba(0,229,255,0.3); border-radius: 50%; z-index: 10; touch-action: none; }
+    #joystick-knob { position: absolute; top: 40px; left: 40px; width: 50px; height: 50px; background: rgba(0,229,255,0.6); border-radius: 50%; border: 2px solid #00e5ff; pointer-events: none; box-shadow: 0 0 12px #00e5ff; }
     
     /* Modal Menus */
-    .modal { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 9, 19, 0.9); z-index: 20; display: none; justify-content: center; align-items: center; }
-    .modal-content { background: #0d1126; border: 1px solid #00e5ff; border-radius: 12px; padding: 24px; max-width: 480px; width: 90%; color: #fff; box-shadow: 0 0 30px rgba(0,229,255,0.2); }
-    .modal-title { font-size: 1.5rem; color: #00e5ff; margin-bottom: 12px; text-align: center; font-weight: bold; }
-    .upgrade-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 6px; }
+    .modal { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 7, 14, 0.85); z-index: 20; display: none; justify-content: center; align-items: center; backdrop-filter: blur(6px); }
+    .modal-content { background: #0a0f24; border: 1px solid #00e5ff; border-radius: 16px; padding: 28px; max-width: 460px; width: 90%; color: #fff; box-shadow: 0 0 40px rgba(0,229,255,0.25); }
+    .modal-title { font-size: 1.6rem; color: #00e5ff; margin-bottom: 16px; text-align: center; font-weight: 800; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+    .upgrade-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(0,229,255,0.1); border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -50,11 +51,11 @@
   <!-- HUD -->
   <div id="hud">
     <div class="hud-card">
-      <div class="element-title"><span id="elem-sym">H</span> <span id="elem-name" style="font-size: 1rem; color: #aaa;">Hydrogen</span></div>
-      <div style="font-size: 0.8rem; color: #bbb; margin-top:2px;">Electronegativity ($\chi$): <span id="elem-en" style="color:#ffea00; font-weight:bold;">2.20</span></div>
+      <div class="element-title"><span id="elem-sym">H</span> <span id="elem-name" style="font-size: 1rem; color: #88a0c0; font-weight: 600;">Hydrogen</span></div>
+      <div style="font-size: 0.85rem; color: #a0b5d0; margin-top:4px;">Electronegativity ($\chi$): <span id="elem-en" style="color:#ffea00; font-weight:bold;">2.20</span></div>
       <div class="stat-bar-bg"><div id="hp-bar" class="stat-bar-fill"></div></div>
-      <div style="font-size: 0.75rem; margin-top: 2px; color: #888;">Valence Electrons: <span id="val-count">1/2</span></div>
-      <div style="font-size: 0.75rem; margin-top: 2px; color: #00e5ff;">Bonded Orbiters: <span id="orbit-count">0</span></div>
+      <div style="font-size: 0.8rem; margin-top: 6px; color: #88a0c0;">Valence Electrons: <span id="val-count" style="color:#fff; font-weight:bold;">1/2</span></div>
+      <div style="font-size: 0.8rem; margin-top: 2px; color: #00e5ff;">Bonded Orbiters: <span id="orbit-count" style="font-weight:bold;">0</span></div>
       <div id="buff-bar"></div>
     </div>
   </div>
@@ -64,8 +65,8 @@
 
   <!-- Control Buttons -->
   <div id="controls-container">
-    <button class="btn" id="btn-bond">BOND / ATTACH (Space)</button>
-    <button class="btn" id="btn-upgrades">UPGRADES (U)</button>
+    <button class="btn" id="btn-bond" tabindex="-1">BOND / PULSE (Space)</button>
+    <button class="btn" id="btn-upgrades" tabindex="-1">UPGRADES (U)</button>
   </div>
 
   <!-- Touch Joystick -->
@@ -74,24 +75,24 @@
   <!-- Upgrades Modal -->
   <div class="modal" id="modal-upgrades">
     <div class="modal-content">
-      <div class="modal-title">Atomic Upgrades</div>
-      <div style="text-align: center; font-size: 0.9rem; color: #aaa; margin-bottom: 12px;">Evolution Points: <span id="pts-count" style="color:#00e5ff; font-weight:bold;">0</span></div>
+      <div class="modal-title">Atomic Evolution</div>
+      <div style="text-align: center; font-size: 0.95rem; color: #a0b5d0; margin-bottom: 16px;">Evolution Points: <span id="pts-count" style="color:#00e5ff; font-weight:bold;">0</span></div>
       
       <div class="upgrade-row">
-        <div><strong>Magnetic Pull</strong><br><small style="color:#888">Collect radius</small></div>
-        <button class="btn" onclick="buyUpgrade('pull')">Upgrade (1 Pt)</button>
+        <div><strong>Magnetic Pull</strong><br><small style="color:#6680a0">Collection reach</small></div>
+        <button class="btn" onclick="buyUpgrade('pull')" tabindex="-1">Upgrade (+30)</button>
       </div>
       <div class="upgrade-row">
-        <div><strong>Atomic Speed</strong><br><small style="color:#888">Movement velocity</small></div>
-        <button class="btn" onclick="buyUpgrade('speed')">Upgrade (1 Pt)</button>
+        <div><strong>Atomic Velocity</strong><br><small style="color:#6680a0">Movement speed</small></div>
+        <button class="btn" onclick="buyUpgrade('speed')" tabindex="-1">Upgrade (+0.8)</button>
       </div>
       <div class="upgrade-row">
-        <div><strong>Bond Range</strong><br><small style="color:#888">Bonding reach & steal efficiency</small></div>
-        <button class="btn" onclick="buyUpgrade('range')">Upgrade (1 Pt)</button>
+        <div><strong>Bond Radius</strong><br><small style="color:#6680a0">Attract & bond reach</small></div>
+        <button class="btn" onclick="buyUpgrade('range')" tabindex="-1">Upgrade (+30)</button>
       </div>
       
-      <div style="text-align: center; margin-top: 18px;">
-        <button class="btn" onclick="toggleModal('modal-upgrades')">Close</button>
+      <div style="text-align: center; margin-top: 20px;">
+        <button class="btn" onclick="toggleModal('modal-upgrades')" tabindex="-1">Close</button>
       </div>
     </div>
   </div>
@@ -104,7 +105,7 @@ const ELEMENTS = [
   { z: 3, sym: 'Li', name: 'Lithium', maxVal: 8, type: 'metal', en: 0.98, color: '#cc80ff' },
   { z: 4, sym: 'Be', name: 'Beryllium', maxVal: 8, type: 'metal', en: 1.57, color: '#c2ff00' },
   { z: 5, sym: 'B', name: 'Boron', maxVal: 8, type: 'metalloid', en: 2.04, color: '#ffb366' },
-  { z: 6, sym: 'C', name: 'Carbon', maxVal: 8, type: 'nonmetal', en: 2.55, color: '#999999' },
+  { z: 6, sym: 'C', name: 'Carbon', maxVal: 8, type: 'nonmetal', en: 2.55, color: '#aaaaaa' },
   { z: 7, sym: 'N', name: 'Nitrogen', maxVal: 8, type: 'nonmetal', en: 3.04, color: '#3399ff' },
   { z: 8, sym: 'O', name: 'Oxygen', maxVal: 8, type: 'nonmetal', en: 3.44, color: '#ff3333' },
   { z: 9, sym: 'F', name: 'Fluorine', maxVal: 8, type: 'nonmetal', en: 3.98, color: '#33ff99' },
@@ -123,27 +124,45 @@ window.addEventListener('resize', resize);
 resize();
 
 // Game State
-let mapSize = 2400;
+let mapSize = 2600;
 let player = {
   x: mapSize / 2, y: mapSize / 2,
+  vx: 0, vy: 0,
   elemIdx: 0,
   valElectrons: 1,
   hp: 100, maxHp: 100,
-  speed: 4,
-  pullRadius: 100,
-  bondRange: 160,
+  speed: 4.5,
+  pullRadius: 110,
+  bondRange: 170,
   upgradePts: 0,
   lastBondTime: 0,
-  bondCooldown: 5000,
+  bondCooldown: 3000,
   activeBuffs: [],
-  bondedOrbiters: [] // Array of { elemIdx, angle, distance }
+  bondedOrbiters: [] // Array of { elemIdx }
 };
 
 let orbitAngleGlobal = 0;
 let electrons = [];
 let cpus = [];
 let hazards = [];
+let particles = [];
+let shockwaves = [];
 let keys = {};
+
+// FIX MOVEMENT FOCUS ISSUES
+window.addEventListener('keydown', e => {
+  let k = e.key.toLowerCase();
+  keys[k] = true;
+  if (e.code === 'Space') { e.preventDefault(); attemptBonding(); }
+  if (k === 'u') toggleModal('modal-upgrades');
+});
+
+window.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+// Ensure Canvas/Window Retains Keyboard Focus
+window.addEventListener('click', () => window.focus());
 
 // Touch Joystick
 let joystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0 };
@@ -156,7 +175,7 @@ joyZone.addEventListener('touchstart', e => {
   let rect = joyZone.getBoundingClientRect();
   joystick.startX = rect.left + rect.width / 2;
   joystick.startY = rect.top + rect.height / 2;
-});
+}, { passive: true });
 
 window.addEventListener('touchmove', e => {
   if (!joystick.active) return;
@@ -164,12 +183,12 @@ window.addEventListener('touchmove', e => {
   let dx = t.clientX - joystick.startX;
   let dy = t.clientY - joystick.startY;
   let dist = Math.hypot(dx, dy);
-  let maxR = 40;
+  let maxR = 45;
   if (dist > maxR) { dx = (dx / dist) * maxR; dy = (dy / dist) * maxR; }
   joystick.dx = dx / maxR;
   joystick.dy = dy / maxR;
   joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-});
+}, { passive: true });
 
 window.addEventListener('touchend', () => {
   joystick.active = false;
@@ -177,19 +196,13 @@ window.addEventListener('touchend', () => {
   joyKnob.style.transform = `translate(0px, 0px)`;
 });
 
-// Controls
-window.addEventListener('keydown', e => {
-  keys[e.key.toLowerCase()] = true;
-  if (e.code === 'Space') attemptBonding();
-  if (e.key.toLowerCase() === 'u') toggleModal('modal-upgrades');
-});
-window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 document.getElementById('btn-bond').addEventListener('click', attemptBonding);
 document.getElementById('btn-upgrades').addEventListener('click', () => toggleModal('modal-upgrades'));
 
 function toggleModal(id) {
   let m = document.getElementById(id);
   m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+  window.focus();
 }
 
 function showNotif(msg, success = false) {
@@ -198,96 +211,113 @@ function showNotif(msg, success = false) {
   el.className = 'notif ' + (success ? 'notif-success' : '');
   el.innerText = msg;
   container.appendChild(el);
-  setTimeout(() => el.remove(), 2000);
+  setTimeout(() => el.remove(), 1800);
 }
 
-// Spawning World Objects
-for (let i = 0; i < 180; i++) {
+function createBurst(x, y, color, count = 12) {
+  for (let i = 0; i < count; i++) {
+    let ang = Math.random() * Math.PI * 2;
+    let spd = 1 + Math.random() * 4;
+    particles.push({
+      x, y,
+      vx: Math.cos(ang) * spd,
+      vy: Math.sin(ang) * spd,
+      color,
+      life: 1,
+      decay: 0.02 + Math.random() * 0.03
+    });
+  }
+}
+
+// Spawning Objects
+for (let i = 0; i < 200; i++) {
   electrons.push({ x: Math.random() * mapSize, y: Math.random() * mapSize });
 }
 
 function spawnCPU() {
-  let eIdx = Math.floor(Math.random() * ELEMENTS.length);
   return {
     x: Math.random() * mapSize,
     y: Math.random() * mapSize,
-    elemIdx: eIdx,
-    hp: 100
+    elemIdx: Math.floor(Math.random() * ELEMENTS.length)
   };
 }
+for (let i = 0; i < 35; i++) cpus.push(spawnCPU());
 
-for (let i = 0; i < 30; i++) cpus.push(spawnCPU());
-
-for (let i = 0; i < 15; i++) {
+for (let i = 0; i < 18; i++) {
   hazards.push({
     x: Math.random() * mapSize,
     y: Math.random() * mapSize,
     type: Math.random() > 0.5 ? 'OH-' : 'OH+',
-    detectRadius: 180
+    detectRadius: 200
   });
 }
 
-// BONDING MECHANIC & ORBIT ATTACHMENT
+// BONDING & ORBITAL PULSE
 function attemptBonding() {
   let now = Date.now();
-  if (now - player.lastBondTime < player.bondCooldown) {
-    let rem = Math.ceil((player.bondCooldown - (now - player.lastBondTime)) / 1000);
-    showNotif(`Bond On Cooldown! (${rem}s)`);
-    return;
-  }
-
   let curElem = ELEMENTS[player.elemIdx];
+
+  // Try finding closest CPU
   let closestIdx = -1;
   let minDist = player.bondRange;
 
-  // Search for closest atom inside range
   for (let i = 0; i < cpus.length; i++) {
     let cpu = cpus[i];
     let d = Math.hypot(cpu.x - player.x, cpu.y - player.y);
-    if (d < minDist) {
-      minDist = d;
-      closestIdx = i;
+    if (d < minDist) { minDist = d; closestIdx = i; }
+  }
+
+  if (closestIdx !== -1) {
+    let targetCpu = cpus[closestIdx];
+    let targetElem = ELEMENTS[targetCpu.elemIdx];
+
+    if (targetElem.en > curElem.en) {
+      showNotif(`Bond Failed! Target EN (${targetElem.en}) > Yours (${curElem.en})`);
+      return;
     }
-  }
 
-  if (closestIdx === -1) {
-    showNotif("No Target Atom Nearby!");
+    // Attach as Orbiter
+    cpus.splice(closestIdx, 1);
+    cpus.push(spawnCPU());
+
+    player.bondedOrbiters.push({ elemIdx: targetCpu.elemIdx });
+    createBurst(targetCpu.x, targetCpu.y, targetElem.color, 20);
+
+    if (curElem.type === 'metal' && targetElem.type === 'nonmetal') {
+      addBuff('Ionic Surge', 'speed', 8000);
+      player.valElectrons++;
+      showNotif(`Ionic Bond! Orbiting Atom Bound + Speed Surge!`, true);
+    } else if (curElem.type === 'nonmetal' && targetElem.type === 'nonmetal') {
+      addBuff('Covalent Shield', 'shield', 10000);
+      showNotif(`Covalent Bond! Orbiting Atom Bound + Shield Buff!`, true);
+    } else {
+      addBuff('Metallic Pulse', 'repel', 8000);
+      showNotif(`Metallic Bond! Orbiting Atom Bound + Repulsion Field!`, true);
+    }
+
+    checkEvolution();
     return;
   }
 
-  let targetCpu = cpus[closestIdx];
-  let targetElem = ELEMENTS[targetCpu.elemIdx];
-
-  // ELECTRONEGATIVITY CHECK
-  if (targetElem.en > curElem.en) {
-    showNotif(`Bond Failed! Target EN (${targetElem.en}) > Yours (${curElem.en})`);
-    return;
-  }
-
-  // Success! Remove from wild and attach as Orbiting Atom
-  player.lastBondTime = now;
-  cpus.splice(closestIdx, 1); // Remove from world
-  cpus.push(spawnCPU()); // Respawn a new one in the distance
-
-  player.bondedOrbiters.push({
-    elemIdx: targetCpu.elemIdx,
-    distance: 65
-  });
-
-  // Determine Bond Type Buff
-  if (curElem.type === 'metal' && targetElem.type === 'nonmetal') {
-    addBuff('Ionic Speed', 'speed', 8000);
-    player.valElectrons++;
-    showNotif(`Ionic Bond! Atom Bound to Orbit + Speed Buff!`, true);
-  } else if (curElem.type === 'nonmetal' && targetElem.type === 'nonmetal') {
-    addBuff('Covalent Shield', 'shield', 10000);
-    showNotif(`Covalent Bond! Atom Bound to Orbit + Shield Buff!`, true);
+  // If no atom to bond, trigger Orbital Shockwave Pulse
+  if (player.bondedOrbiters.length > 0) {
+    if (now - player.lastBondTime < 1500) return;
+    player.lastBondTime = now;
+    shockwaves.push({ x: player.x, y: player.y, radius: 10, maxRadius: 180 + (player.bondedOrbiters.length * 20), color: curElem.color });
+    
+    // Push away hazards
+    for (let h of hazards) {
+      let d = Math.hypot(h.x - player.x, h.y - player.y);
+      if (d < 220) {
+        let ang = Math.atan2(h.y - player.y, h.x - player.x);
+        h.x += Math.cos(ang) * 120;
+        h.y += Math.sin(ang) * 120;
+      }
+    }
+    showNotif("Orbital Shockwave Released!", true);
   } else {
-    addBuff('Metallic Field', 'repel', 8000);
-    showNotif(`Metallic Bond! Atom Bound to Orbit + Repulsion Buff!`, true);
+    showNotif("No Target Atom Nearby!");
   }
-
-  checkEvolution();
 }
 
 function addBuff(name, type, duration) {
@@ -297,8 +327,7 @@ function addBuff(name, type, duration) {
 }
 
 function hasBuff(type) {
-  let now = Date.now();
-  return player.activeBuffs.some(b => b.type === type && b.endTime > now);
+  return player.activeBuffs.some(b => b.type === type && b.endTime > Date.now());
 }
 
 function checkEvolution() {
@@ -308,18 +337,18 @@ function checkEvolution() {
       player.elemIdx++;
       player.valElectrons = 1;
       player.upgradePts += 2;
+      createBurst(player.x, player.y, '#00e5ff', 30);
       showNotif(`EVOLVED into ${ELEMENTS[player.elemIdx].name}! (+2 Pts)`, true);
     }
   }
 }
 
 function buyUpgrade(type) {
-  if (player.upgradePts < 1) { showNotif("Not enough Upgrade Points!"); return; }
+  if (player.upgradePts < 1) { showNotif("Not enough Evolution Points!"); return; }
   if (type === 'pull') player.pullRadius += 30;
   if (type === 'speed') player.speed += 0.8;
   if (type === 'range') player.bondRange += 30;
   player.upgradePts--;
-  document.getElementById('pts-count').innerText = player.upgradePts;
   showNotif("Upgrade Applied!", true);
 }
 
@@ -327,38 +356,44 @@ function buyUpgrade(type) {
 function update() {
   let curElem = ELEMENTS[player.elemIdx];
   let curSpeed = player.speed;
-  if (hasBuff('speed')) curSpeed *= 1.5;
+  if (hasBuff('speed')) curSpeed *= 1.4;
 
-  // Rotation speed of orbiters
-  orbitAngleGlobal += 0.03;
+  orbitAngleGlobal += 0.025;
 
-  // Player Movement
-  let moveX = 0, moveY = 0;
-  if (keys['a'] || keys['arrowleft']) moveX -= 1;
-  if (keys['d'] || keys['arrowright']) moveX += 1;
-  if (keys['w'] || keys['arrowup']) moveY -= 1;
-  if (keys['s'] || keys['arrowdown']) moveY += 1;
+  // DIRECTIONAL INPUT (WASD / Arrows / Joystick)
+  let dx = 0, dy = 0;
+  if (keys['a'] || keys['arrowleft']) dx -= 1;
+  if (keys['d'] || keys['arrowright']) dx += 1;
+  if (keys['w'] || keys['arrowup']) dy -= 1;
+  if (keys['s'] || keys['arrowdown']) dy += 1;
 
-  if (joystick.active) { moveX = joystick.dx; moveY = joystick.dy; }
+  if (joystick.active) { dx = joystick.dx; dy = joystick.dy; }
 
-  let len = Math.hypot(moveX, moveY);
-  if (len > 0) {
-    player.x += (moveX / (len > 1 ? len : 1)) * curSpeed;
-    player.y += (moveY / (len > 1 ? len : 1)) * curSpeed;
+  let mag = Math.hypot(dx, dy);
+  if (mag > 0) {
+    player.vx += (dx / (mag > 1 ? mag : 1)) * curSpeed * 0.25;
+    player.vy += (dy / (mag > 1 ? mag : 1)) * curSpeed * 0.25;
   }
 
-  // Constrain to Map
-  player.x = Math.max(30, Math.min(mapSize - 30, player.x));
-  player.y = Math.max(30, Math.min(mapSize - 30, player.y));
+  // Smooth Movement Dampening
+  player.x += player.vx;
+  player.y += player.vy;
+  player.vx *= 0.82;
+  player.vy *= 0.82;
+
+  // Map Bounds
+  player.x = Math.max(40, Math.min(mapSize - 40, player.x));
+  player.y = Math.max(40, Math.min(mapSize - 40, player.y));
 
   // Collect Electrons
   for (let i = electrons.length - 1; i >= 0; i--) {
     let e = electrons[i];
     let d = Math.hypot(e.x - player.x, e.y - player.y);
     if (d < player.pullRadius) {
-      e.x += (player.x - e.x) * 0.1;
-      e.y += (player.y - e.y) * 0.1;
-      if (d < 25) {
+      e.x += (player.x - e.x) * 0.12;
+      e.y += (player.y - e.y) * 0.12;
+      if (d < 22) {
+        createBurst(e.x, e.y, '#ffea00', 6);
         electrons.splice(i, 1);
         player.valElectrons++;
         checkEvolution();
@@ -367,24 +402,39 @@ function update() {
     }
   }
 
-  // Hazard AI & Repulsion Buff
+  // Update Shockwaves
+  for (let i = shockwaves.length - 1; i >= 0; i--) {
+    let sw = shockwaves[i];
+    sw.radius += 8;
+    if (sw.radius > sw.maxRadius) shockwaves.splice(i, 1);
+  }
+
+  // Update Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx; p.y += p.vy;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Hazards AI
   for (let h of hazards) {
     let d = Math.hypot(player.x - h.x, player.y - h.y);
     if (hasBuff('repel') && d < 220) {
       h.x -= (player.x - h.x) * 0.08;
       h.y -= (player.y - h.y) * 0.08;
     } else if (d < h.detectRadius) {
-      h.x += (player.x - h.x) * 0.02;
-      h.y += (player.y - h.y) * 0.02;
-      if (d < 25) {
-        let dmg = 0.5;
-        if (hasBuff('shield')) dmg *= 0.4;
+      h.x += (player.x - h.x) * 0.025;
+      h.y += (player.y - h.y) * 0.025;
+      if (d < 24) {
+        let dmg = 0.6;
+        if (hasBuff('shield')) dmg *= 0.3;
         player.hp -= dmg;
       }
     }
   }
 
-  // Filter Active Buffs
+  // Update Buffs
   let now = Date.now();
   player.activeBuffs = player.activeBuffs.filter(b => b.endTime > now);
 
@@ -397,14 +447,12 @@ function update() {
   document.getElementById('hp-bar').style.width = Math.max(0, player.hp) + '%';
   document.getElementById('pts-count').innerText = player.upgradePts;
 
-  // Render Buff Bar
   let buffBar = document.getElementById('buff-bar');
   buffBar.innerHTML = '';
   for (let b of player.activeBuffs) {
     let badge = document.createElement('div');
     badge.className = 'buff-badge';
-    let remSec = Math.ceil((b.endTime - now) / 1000);
-    badge.innerText = `${b.name} (${remSec}s)`;
+    badge.innerText = `${b.name} (${Math.ceil((b.endTime - now) / 1000)}s)`;
     buffBar.appendChild(badge);
   }
 }
@@ -419,9 +467,9 @@ function render() {
   ctx.translate(-camX, -camY);
 
   // Background Grid
-  ctx.strokeStyle = 'rgba(0,229,255,0.05)';
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.04)';
   ctx.lineWidth = 1;
-  let gridSize = 100;
+  let gridSize = 120;
   for (let x = 0; x < mapSize; x += gridSize) {
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, mapSize); ctx.stroke();
   }
@@ -429,82 +477,114 @@ function render() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(mapSize, y); ctx.stroke();
   }
 
+  // Render Shockwaves
+  for (let sw of shockwaves) {
+    ctx.strokeStyle = sw.color;
+    ctx.lineWidth = 3;
+    ctx.globalAlpha = 1 - (sw.radius / sw.maxRadius);
+    ctx.beginPath(); ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1.0;
+  }
+
   // Render Electrons
   ctx.fillStyle = '#ffea00';
+  ctx.shadowColor = '#ffea00';
+  ctx.shadowBlur = 8;
   for (let e of electrons) {
     ctx.beginPath(); ctx.arc(e.x, e.y, 4, 0, Math.PI * 2); ctx.fill();
   }
+  ctx.shadowBlur = 0;
+
+  // Render Particles
+  for (let p of particles) {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = p.life;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1.0;
 
   // Render CPU Atoms
   for (let cpu of cpus) {
     let eData = ELEMENTS[cpu.elemIdx];
     ctx.fillStyle = eData.color;
+    ctx.shadowColor = eData.color;
+    ctx.shadowBlur = 10;
     ctx.beginPath(); ctx.arc(cpu.x, cpu.y, 18, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#000'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#05070e'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(eData.sym, cpu.x, cpu.y + 4);
   }
 
   // Render Hazards
   for (let h of hazards) {
     ctx.fillStyle = '#ff1744';
-    ctx.beginPath(); ctx.arc(h.x, h.y, 14, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowColor = '#ff1744';
+    ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(h.x, h.y, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.fillStyle = '#fff'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(h.type, h.x, h.y + 3);
   }
 
-  // Render Bonding Reach Ring
-  ctx.strokeStyle = 'rgba(0, 229, 255, 0.15)';
-  ctx.lineWidth = 1;
+  // Bond Range Ring
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.12)';
+  ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(player.x, player.y, player.bondRange, 0, Math.PI * 2); ctx.stroke();
 
-  // RENDER ORBITING BONDED ATOMS
+  // MULTI-SHELL ORBITING BONDED ATOMS
   let orbCount = player.bondedOrbiters.length;
   if (orbCount > 0) {
-    // Draw Orbital Shell Guide Line
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.3)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath(); ctx.arc(player.x, player.y, 65, 0, Math.PI * 2); ctx.stroke();
-    ctx.setLineDash([]);
+    let shells = [];
+    if (orbCount <= 2) shells = [orbCount];
+    else shells = [2, orbCount - 2]; // Shell 1 holds 2, Shell 2 holds rest
 
-    for (let i = 0; i < orbCount; i++) {
-      let orb = player.bondedOrbiters[i];
-      let angle = orbitAngleGlobal + (i * (Math.PI * 2 / orbCount));
-      let ox = player.x + Math.cos(angle) * orb.distance;
-      let oy = player.y + Math.sin(angle) * orb.distance;
+    let orbIdx = 0;
+    for (let s = 0; s < shells.length; s++) {
+      let countInShell = shells[s];
+      let dist = 65 + (s * 35);
 
-      let orbElem = ELEMENTS[orb.elemIdx];
+      // Draw Orbit Line
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.25)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.arc(player.x, player.y, dist, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
 
-      // Draw Chemical Bond Connection Line
-      ctx.strokeStyle = 'rgba(0, 229, 255, 0.6)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(player.x, player.y);
-      ctx.lineTo(ox, oy);
-      ctx.stroke();
+      for (let i = 0; i < countInShell; i++) {
+        let orb = player.bondedOrbiters[orbIdx++];
+        let angle = (s % 2 === 0 ? orbitAngleGlobal : -orbitAngleGlobal) + (i * (Math.PI * 2 / countInShell));
+        let ox = player.x + Math.cos(angle) * dist;
+        let oy = player.y + Math.sin(angle) * dist;
 
-      // Draw Orbiting Atom Body
-      ctx.fillStyle = orbElem.color;
-      ctx.shadowColor = orbElem.color;
-      ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.arc(ox, oy, 14, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
+        let orbElem = ELEMENTS[orb.elemIdx];
 
-      // Label Orbiting Atom
-      ctx.fillStyle = '#000'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(orbElem.sym, ox, oy + 3);
+        // Draw Energy Link Beam
+        ctx.strokeStyle = 'rgba(0, 229, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(ox, oy); ctx.stroke();
+
+        // Orbiting Atom Body
+        ctx.fillStyle = orbElem.color;
+        ctx.shadowColor = orbElem.color;
+        ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(ox, oy, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#05070e'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(orbElem.sym, ox, oy + 3);
+      }
     }
   }
 
-  // Render Player Core
+  // Player Core Node
   let curElem = ELEMENTS[player.elemIdx];
   ctx.fillStyle = curElem.color;
   ctx.shadowColor = curElem.color;
-  ctx.shadowBlur = 15;
+  ctx.shadowBlur = 20;
   ctx.beginPath(); ctx.arc(player.x, player.y, 22, 0, Math.PI * 2); ctx.fill();
   ctx.shadowBlur = 0;
 
-  ctx.fillStyle = '#000'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#05070e'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
   ctx.fillText(curElem.sym, player.x, player.y + 5);
 
   ctx.restore();
